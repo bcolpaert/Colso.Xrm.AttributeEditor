@@ -458,12 +458,15 @@ namespace Colso.Xrm.AttributeEditor
             informationPanel = InformationPanel.GetInformationPanel(this, "Loading template...", 340, 150);
             SendMessageToStatusBar(this, new StatusBarMessageEventArgs("Loading template..."));
 
+            var entityItem = (EntityItem) cmbEntities.SelectedItem;
+            var itemsToAdd = new List<ListViewItem>();
+
             var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
             bwTransferData.DoWork += (sender, e) =>
             {
                 var worker = (BackgroundWorker)sender;
                 var attributes = (List<ListViewItem>)e.Argument;
-                var entityitem = (EntityItem)cmbEntities.SelectedItem;
+                var entityitem = entityItem;
                 var errors = new List<Tuple<string, string>>();
                 var nrOfCreates = 0;
                 var nrOfUpdates = 0;
@@ -486,7 +489,6 @@ namespace Colso.Xrm.AttributeEditor
                             // For shared strings, look up the value in the shared strings table.
                             var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault()?.SharedStringTable;
 
-                            lvAttributes.BeginUpdate();
                             // Check all existing attributes
                             foreach (var item in attributes)
                             {
@@ -537,14 +539,12 @@ namespace Colso.Xrm.AttributeEditor
                                         item.SubItems.Add("Unmanaged");
                                         item.SubItems.Add(string.IsNullOrEmpty(requirement) ? "None" : requirement);
                                         item.SubItems.Add("Create");
-                                        lvAttributes.Items.Add(item);
+                                        itemsToAdd.Add(item);
 
                                         nrOfCreates++;
                                     }
                                 }
                             }
-
-                            lvAttributes.EndUpdate();
                         }
                     }
                     SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Format("{0} create; {1} update; {2} delete", nrOfCreates, nrOfUpdates, nrOfDeletes)));
@@ -552,7 +552,6 @@ namespace Colso.Xrm.AttributeEditor
                 catch (FaultException<OrganizationServiceFault> error)
                 {
                     errors.Add(new Tuple<string, string>(entityitem.LogicalName, error.Message));
-                    lvAttributes.EndUpdate();
                     SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Empty));
                 }
 
@@ -560,6 +559,14 @@ namespace Colso.Xrm.AttributeEditor
             };
             bwTransferData.RunWorkerCompleted += (sender, e) =>
             {
+                lvAttributes.BeginUpdate();
+
+                // Add attributes here to avoid accessing lvAttributes across threads.
+                foreach (var item in itemsToAdd)
+                    lvAttributes.Items.Add(item);
+
+                lvAttributes.EndUpdate();
+
                 Controls.Remove(informationPanel);
                 informationPanel.Dispose();
                 ManageWorkingState(false);
@@ -591,15 +598,18 @@ namespace Colso.Xrm.AttributeEditor
             ManageWorkingState(true);
             informationPanel = InformationPanel.GetInformationPanel(this, "Processing entity...", 340, 150);
 
+
+            var entityitem = (EntityItem) cmbEntities.SelectedItem;
+            var itemsToProcess = lvAttributes.Items.Cast<ListViewItem>().ToList();
+
             var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
             bwTransferData.DoWork += (sender, e) =>
             {
                 var worker = (BackgroundWorker)sender;
-                var entityitem = (EntityItem)cmbEntities.SelectedItem;
                 var errors = new List<Tuple<string, string>>();
                 var helper = new EntityHelper(entityitem.LogicalName, entityitem.LanguageCode, service);
 
-                foreach (var item in lvAttributes.Items.Cast<ListViewItem>())
+                foreach (var item in itemsToProcess)
                 {
                     if (item.SubItems.Count == 6)
                     { 
