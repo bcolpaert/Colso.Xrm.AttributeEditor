@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.ServiceModel;
 using System.Windows.Forms;
@@ -474,7 +475,8 @@ namespace Colso.Xrm.AttributeEditor
 
                 try
                 {
-                    using (SpreadsheetDocument document = SpreadsheetDocument.Open(txtTemplatePath.Text, false))
+                    using (FileStream stream = File.Open(txtTemplatePath.Text, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (SpreadsheetDocument document = SpreadsheetDocument.Open(stream, false))
                     {
                         var sheet = document.WorkbookPart.Workbook.Sheets.Cast<Sheet>().Where(s => s.Name == entityitem.LogicalName).FirstOrDefault();
                         if (sheet == null)
