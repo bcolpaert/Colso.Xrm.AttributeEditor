@@ -143,7 +143,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                         break;
                     case "money":
                         // Create a money attribute	
-                        MoneyAttributeMetadata moneyAttribute = new MoneyAttributeMetadata
+                        attribute = new MoneyAttributeMetadata
                         {
                             // Set extended properties
                             MaxValue = 1000.00,
