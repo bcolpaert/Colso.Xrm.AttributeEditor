@@ -1,4 +1,4 @@
-﻿using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
@@ -112,6 +112,16 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                         };
                         break;
                     case "double":
+                        // Create a decimal attribute	
+                        attribute = new DoubleAttributeMetadata
+                        {
+                            // Set extended properties
+                            MaxValue = 100,
+                            MinValue = 0,
+                            Precision = 1
+                        };
+                        break;
+                    case "decimal":
                         // Create a decimal attribute	
                         attribute = new DecimalAttributeMetadata
                         {
