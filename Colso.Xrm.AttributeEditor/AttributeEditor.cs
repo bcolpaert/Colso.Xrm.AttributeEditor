@@ -350,6 +350,8 @@ namespace Colso.Xrm.AttributeEditor
             };
             saveFileDlg.ShowDialog();
 
+            var selectedLogicalName = (EntityItem) cmbEntities.SelectedItem;
+
             // If the file name is not an empty string open it for saving.
             if (!string.IsNullOrEmpty(saveFileDlg.FileName))
             {
@@ -359,9 +361,8 @@ namespace Colso.Xrm.AttributeEditor
                 var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
                 bwTransferData.DoWork += (sender, e) =>
                 {
-                    var worker = (BackgroundWorker)sender;
                     var attributes = (List<AttributeMetadata>)e.Argument;
-                    var entityitem = (EntityItem)cmbEntities.SelectedItem;
+                    var entityitem = selectedLogicalName;
                     var errors = new List<Tuple<string, string>>();
 
                     try
@@ -396,7 +397,7 @@ namespace Colso.Xrm.AttributeEditor
                                     var newRow = new Row();
 
                                     newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.LogicalName));
-                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.DisplayName.UserLocalizedLabel.Label));
+                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.DisplayName?.UserLocalizedLabel?.Label));
                                     newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.AttributeType.Value.ToString()));
                                     newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.RequiredLevel.Value.ToString()));
 
