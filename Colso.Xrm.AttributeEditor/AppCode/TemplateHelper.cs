@@ -49,22 +49,21 @@ namespace Colso.Xrm.AttributeEditor.AppCode
 
         public static string GetCellValue(Row row, int index, SharedStringTable sharedString)
         {
-            if (row != null && row.ChildElements.Count > index)
-            {
-                var cell = (Cell)row.ChildElements[index];
-                if (cell.DataType != null && sharedString != null
+            var column = Utilities.IndexToColumn(index+1);
+
+            var cell = (Cell) row.ChildElements.FirstOrDefault(x =>
+                ((Cell) x).CellReference.Value.StartsWith(column));
+
+            if (cell == null)
+                return null;
+
+            if (cell.DataType != null && sharedString != null
                 && cell.DataType.HasValue && cell.DataType == CellValues.SharedString
                 && int.Parse(cell.CellValue.InnerText) < sharedString.ChildElements.Count)
-                {
-                    return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
-                }
-                else
-                {
-                    return cell.CellValue.InnerText;
-                }
-            }
-
-            return null;
+            {
+                return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
+            } 
+            return cell.CellValue?.InnerText;
         }
     }
 }
