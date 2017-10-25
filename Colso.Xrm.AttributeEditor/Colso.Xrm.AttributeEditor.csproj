@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\Documents\Tools\XrmToolBox\Plugins\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -130,6 +130,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppCode\AttributeMetadataRow.cs" />
+    <Compile Include="AppCode\AttributeTypes\AttributeBase.cs" />
+    <Compile Include="AppCode\AttributeTypes\AttributeMetadataBase.cs" />
+    <Compile Include="AppCode\AttributeTypes\BooleanAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\DateTimeAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\DoubleAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\IAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\IntegerAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\LookupAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\MemoAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\MoneyAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\PicklistAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\StatusAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\StringAttribute.cs" />
+    <Compile Include="AppCode\ColumnAttribute.cs" />
     <Compile Include="AppCode\EntityHelper.cs" />
     <Compile Include="AppCode\EntityItem.cs" />
     <Compile Include="AppCode\CrmExceptionHelper.cs" />
@@ -137,6 +152,7 @@
     <Compile Include="AppCode\MetadataHelper.cs" />
     <Compile Include="AppCode\StatusMessageEventArgs.cs" />
     <Compile Include="AppCode\TemplateHelper.cs" />
+    <Compile Include="AppCode\Utilities.cs" />
     <Compile Include="AttributeEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -183,12 +199,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.dll" "C:\Users\Michael Sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.dll"
+copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.pdb" "C:\Users\Michael Sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.pdb"</PostBuildEvent>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_ConfigurationName="Release" BuildVersion_BuildVersioningStyle="None.YearStamp.MonthStamp.DayStamp" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" />
+      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_BuildVersioningStyle="None.YearStamp.MonthStamp.DayStamp" BuildVersion_ConfigurationName="Release" />
     </VisualStudio>
   </ProjectExtensions>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

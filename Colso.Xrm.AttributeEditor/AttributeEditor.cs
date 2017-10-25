@@ -4,17 +4,17 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using McTools.Xrm.Connection;
-using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.ServiceModel;
 using System.Windows.Forms;
-using System.Xml;
 using XrmToolBox.Extensibility;
 using XrmToolBox.Extensibility.Args;
 using XrmToolBox.Extensibility.Interfaces;
@@ -261,6 +261,12 @@ namespace Colso.Xrm.AttributeEditor
                 // Reinit other controls
                 lvAttributes.Items.Clear();
 
+                // Setup Column Headings
+                lvAttributes.Columns.Clear();
+                lvAttributes.Columns.Add("Action");
+                foreach (var column in AttributeMetadataRow.GetColumns())
+                    lvAttributes.Columns.Add(column.Header);
+
                 if (cmbEntities.SelectedItem != null)
                 {
                     var entityitem = (EntityItem)cmbEntities.SelectedItem;
@@ -283,18 +289,19 @@ namespace Colso.Xrm.AttributeEditor
                             {
                                 if (att.IsValidForUpdate.Value && att.IsCustomizable.Value)
                                 {
-                                    var name = att.DisplayName == null ?
-                                        string.Empty :
-                                        att.DisplayName.UserLocalizedLabel == null ?
-                                        att.DisplayName.LocalizedLabels.Select(l => l.Label).FirstOrDefault() :
-                                        att.DisplayName.UserLocalizedLabel.Label;
-                                    var item = new ListViewItem(att.LogicalName);
+                                    var attribute = EntityHelper.GetAttributeFromTypeName(att.AttributeType.Value.ToString());
+
+                                    if (attribute == null)
+                                        continue;
+
+                                    attribute.LoadFromAttributeMetadata(att);
+
+                                    var row = attribute.ToAttributeMetadataRow();
+
+                                    var item = row.ToListViewItem();
+
                                     item.Tag = att;
-                                    item.SubItems.Add(name);
-                                    item.SubItems.Add(att.AttributeType.Value.ToString());
-                                    item.SubItems.Add(att.IsCustomAttribute.Value ? "Unmanaged" : "Managed");
-                                    item.SubItems.Add(att.RequiredLevel.Value.ToString());
-                                    item.SubItems.Add(string.Empty);
+
                                     itemList.Add(item);
                                 }
                             }
@@ -349,6 +356,8 @@ namespace Colso.Xrm.AttributeEditor
             };
             saveFileDlg.ShowDialog();
 
+            var selectedLogicalName = (EntityItem) cmbEntities.SelectedItem;
+
             // If the file name is not an empty string open it for saving.
             if (!string.IsNullOrEmpty(saveFileDlg.FileName))
             {
@@ -358,9 +367,8 @@ namespace Colso.Xrm.AttributeEditor
                 var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
                 bwTransferData.DoWork += (sender, e) =>
                 {
-                    var worker = (BackgroundWorker)sender;
                     var attributes = (List<AttributeMetadata>)e.Argument;
-                    var entityitem = (EntityItem)cmbEntities.SelectedItem;
+                    var entityitem = selectedLogicalName;
                     var errors = new List<Tuple<string, string>>();
 
                     try
@@ -374,13 +382,11 @@ namespace Colso.Xrm.AttributeEditor
                             TemplateHelper.CreateSheet(workbookPart, sheets, entityitem.LogicalName, out sheetData);
 
                             #region Header
-
+                            
                             var headerRow = new Row();
 
-                            headerRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, "Logical Name"));
-                            headerRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, "Display Name"));
-                            headerRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, "Type"));
-                            headerRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, "Field Requirement"));
+                            foreach (var field in AttributeMetadataRow.GetColumns())
+                                headerRow.AppendChild(TemplateHelper.CreateCell(field.Type, field.Header));
 
                             sheetData.AppendChild(headerRow);
 
@@ -390,17 +396,20 @@ namespace Colso.Xrm.AttributeEditor
 
                             foreach (var attribute in attributes)
                             {
-                                if (attribute != null)
-                                {
-                                    var newRow = new Row();
+                                if (attribute == null)
+                                    continue;
 
-                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.LogicalName));
-                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.DisplayName.UserLocalizedLabel.Label));
-                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.AttributeType.Value.ToString()));
-                                    newRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, attribute.RequiredLevel.Value.ToString()));
+                                var attributeType =
+                                    EntityHelper.GetAttributeFromTypeName(attribute.AttributeType.Value.ToString());
 
-                                    sheetData.AppendChild(newRow);
-                                }
+                                if (attributeType == null)
+                                    continue;
+
+                                attributeType.LoadFromAttributeMetadata(attribute);
+
+                                var metadataRow = attributeType.ToAttributeMetadataRow();
+
+                                sheetData.AppendChild(metadataRow.ToTableRow());
                             }
 
                             #endregion
@@ -458,12 +467,14 @@ namespace Colso.Xrm.AttributeEditor
             informationPanel = InformationPanel.GetInformationPanel(this, "Loading template...", 340, 150);
             SendMessageToStatusBar(this, new StatusBarMessageEventArgs("Loading template..."));
 
+            var entityItem = (EntityItem) cmbEntities.SelectedItem;
+            var items = new List<ListViewItem>();
+
             var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
             bwTransferData.DoWork += (sender, e) =>
             {
-                var worker = (BackgroundWorker)sender;
                 var attributes = (List<ListViewItem>)e.Argument;
-                var entityitem = (EntityItem)cmbEntities.SelectedItem;
+                var entityitem = entityItem;
                 var errors = new List<Tuple<string, string>>();
                 var nrOfCreates = 0;
                 var nrOfUpdates = 0;
@@ -471,7 +482,8 @@ namespace Colso.Xrm.AttributeEditor
 
                 try
                 {
-                    using (SpreadsheetDocument document = SpreadsheetDocument.Open(txtTemplatePath.Text, false))
+                    using (FileStream stream = File.Open(txtTemplatePath.Text, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (SpreadsheetDocument document = SpreadsheetDocument.Open(stream, false))
                     {
                         var sheet = document.WorkbookPart.Workbook.Sheets.Cast<Sheet>().Where(s => s.Name == entityitem.LogicalName).FirstOrDefault();
                         if (sheet == null)
@@ -486,30 +498,25 @@ namespace Colso.Xrm.AttributeEditor
                             // For shared strings, look up the value in the shared strings table.
                             var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault()?.SharedStringTable;
 
-                            lvAttributes.BeginUpdate();
                             // Check all existing attributes
                             foreach (var item in attributes)
                             {
-                                var row = templaterows.Where(r => TemplateHelper.GetCellValue(r, 0, stringTable) == item.Text).FirstOrDefault();
+                                var row = templaterows.Where(r => TemplateHelper.GetCellValue(r, 0, stringTable) == item.SubItems[1].Text).FirstOrDefault();
+
+                                var attributeMetadataRow = AttributeMetadataRow.FromListViewItem(item);
+
+                                attributeMetadataRow.UpdateFromTemplateRow(row, stringTable);
+                                var listViewItem = attributeMetadataRow.ToListViewItem();
+                                listViewItem.Tag = item.Tag;
+
+                                items.Add(listViewItem);
+
+                                if (attributeMetadataRow.Action == "Update")
+                                    nrOfUpdates++;
+                                else if (attributeMetadataRow.Action == "Delete")
+                                    nrOfDeletes++;
 
                                 InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing new attribute {0}...", item.Text));
-                                if (row != null)
-                                {
-                                    if (IsChanged(item, row, stringTable))
-                                    {
-                                        nrOfUpdates++;
-                                        item.UseItemStyleForSubItems = false;
-                                        item.SubItems[5].Text = "Update";
-                                        item.SubItems[5].ForeColor = ColorUpdate;
-                                    }
-                                }
-                                else if (item.SubItems[3].Text != "Managed")
-                                {
-                                    nrOfDeletes++;
-                                    item.UseItemStyleForSubItems = true;
-                                    item.SubItems[5].Text = "Delete";
-                                    item.ForeColor = ColorDelete;
-                                }
                             }
 
                             // Check new attributes
@@ -526,25 +533,15 @@ namespace Colso.Xrm.AttributeEditor
                                     {
                                         InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing new attribute {0}...", logicalname));
 
-                                        var displayname = TemplateHelper.GetCellValue(row, 1, stringTable);
-                                        var type = TemplateHelper.GetCellValue(row, 2, stringTable);
-                                        var requirement = TemplateHelper.GetCellValue(row, 3, stringTable);
+                                        var attributeMetadataRow = AttributeMetadataRow.FromTableRow(row, stringTable);
+                                        attributeMetadataRow.Action = "Create";
 
-                                        var item = new ListViewItem(logicalname);
-                                        item.ForeColor = ColorCreate;
-                                        item.SubItems.Add(string.IsNullOrEmpty(displayname) ? logicalname : displayname);
-                                        item.SubItems.Add(string.IsNullOrEmpty(type) ? "String" : type);
-                                        item.SubItems.Add("Unmanaged");
-                                        item.SubItems.Add(string.IsNullOrEmpty(requirement) ? "None" : requirement);
-                                        item.SubItems.Add("Create");
-                                        lvAttributes.Items.Add(item);
+                                        items.Add(attributeMetadataRow.ToListViewItem());
 
                                         nrOfCreates++;
                                     }
                                 }
                             }
-
-                            lvAttributes.EndUpdate();
                         }
                     }
                     SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Format("{0} create; {1} update; {2} delete", nrOfCreates, nrOfUpdates, nrOfDeletes)));
@@ -552,7 +549,6 @@ namespace Colso.Xrm.AttributeEditor
                 catch (FaultException<OrganizationServiceFault> error)
                 {
                     errors.Add(new Tuple<string, string>(entityitem.LogicalName, error.Message));
-                    lvAttributes.EndUpdate();
                     SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Empty));
                 }
 
@@ -560,6 +556,15 @@ namespace Colso.Xrm.AttributeEditor
             };
             bwTransferData.RunWorkerCompleted += (sender, e) =>
             {
+                lvAttributes.BeginUpdate();
+
+                // Add attributes here to avoid accessing lvAttributes across threads.
+                lvAttributes.Items.Clear();
+                foreach (var item in items)
+                    lvAttributes.Items.Add(item);
+
+                lvAttributes.EndUpdate();
+
                 Controls.Remove(informationPanel);
                 informationPanel.Dispose();
                 ManageWorkingState(false);
@@ -591,36 +596,52 @@ namespace Colso.Xrm.AttributeEditor
             ManageWorkingState(true);
             informationPanel = InformationPanel.GetInformationPanel(this, "Processing entity...", 340, 150);
 
+            var entityitem = (EntityItem) cmbEntities.SelectedItem;
+            var itemsToProcess = lvAttributes.Items.Cast<ListViewItem>().ToList();
+
             var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
             bwTransferData.DoWork += (sender, e) =>
             {
-                var worker = (BackgroundWorker)sender;
-                var entityitem = (EntityItem)cmbEntities.SelectedItem;
                 var errors = new List<Tuple<string, string>>();
                 var helper = new EntityHelper(entityitem.LogicalName, entityitem.LanguageCode, service);
 
-                foreach (var item in lvAttributes.Items.Cast<ListViewItem>())
+                foreach (var item in itemsToProcess)
                 {
-                    if (item.SubItems.Count == 6)
-                    { 
-                        var action = item.SubItems[5].Text;
+                    // TODO: Validate each row
+                    //if (item.SubItems.Count == 6)
+                    //{ 
+                        var action = item.SubItems[0].Text;
 
                         if (!string.IsNullOrEmpty(action) && !string.IsNullOrEmpty(item.Text))
                         {
-                            InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing attribute {0}...", item.Text));
+                            var attributeMetadata = AttributeMetadataRow.FromListViewItem(item);
+
+                            InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing attribute {0}...", attributeMetadata.LogicalName));
 
                             try
                             {
+                                var attribute = EntityHelper.GetAttributeFromTypeName(attributeMetadata.AttributeType);
+
+                                if (attribute == null)
+                                {
+                                    errors.Add(new Tuple<string, string>(item.Text,
+                                        $"The Attribute Type \"{attributeMetadata.AttributeType}\" is not yet supported."));
+                                    continue;
+                                }
+
+                                attribute.LoadFromAttributeMetadataRow(attributeMetadata);
+                                attribute.Entity = entityitem.LogicalName;
+
                                 switch (action)
                                 {
                                     case "Create":
-                                        if (cbCreate.Checked) helper.CreateAttribute(item.Text, item.SubItems[1].Text, item.SubItems[2].Text, item.SubItems[4].Text);
+                                        if (cbCreate.Checked) attribute.CreateAttribute(service);
                                         break;
                                     case "Update":
-                                        if (cbUpdate.Checked) helper.UpdateAttribute(item.Text, item.SubItems[1].Text, item.SubItems[4].Text);
+                                        if (cbUpdate.Checked) attribute.UpdateAttribute(service);
                                         break;
                                     case "Delete":
-                                        if (cbDelete.Checked) helper.DeleteAttribute(item.Text);
+                                        if (cbDelete.Checked) attribute.DeleteAttribute(service);
                                         break;
                                 }
                             }
@@ -629,10 +650,11 @@ namespace Colso.Xrm.AttributeEditor
                                 errors.Add(new Tuple<string, string>(item.Text, error.Message));
                             }
                         }
-                    } else
-                    {
-                        errors.Add(new Tuple<string, string>(item.Name, string.Format("Invalid row! Unexpected subitems count [{0}]", item.SubItems.Count)));
-                    }
+                    //}
+                    //else
+                    //{
+                    //    errors.Add(new Tuple<string, string>(item.Name, string.Format("Invalid row! Unexpected subitems count [{0}]", item.SubItems.Count)));
+                    //}
                 }
 
                 helper.Publish();
@@ -692,24 +714,30 @@ namespace Colso.Xrm.AttributeEditor
             listview.ListViewItemSorter = new ListViewItemComparer(column, listview.Sorting);
         }
 
-        private bool IsChanged(ListViewItem item, Row row, SharedStringTable stringTable)
+        private bool IsChanged(ListViewItem lvItems, Row row, SharedStringTable stringTable)
         {
             var changed = false;
 
             var displayName = TemplateHelper.GetCellValue(row, 1, stringTable);
-            if (item.SubItems[1].Text != displayName && !string.IsNullOrEmpty(displayName))
+            if (lvItems.SubItems[1].Text != displayName && !string.IsNullOrEmpty(displayName))
             {
-                item.SubItems[1].Text = displayName;
-                item.SubItems[1].ForeColor = ColorUpdate;
+                lvItems.SubItems[1].Text = displayName;
+                lvItems.SubItems[1].ForeColor = ColorUpdate;
                 changed = true;
             }
 
-            var requiredLevel = TemplateHelper.GetCellValue(row, 4, stringTable);
-            if (item.SubItems[4].Text != requiredLevel && !string.IsNullOrEmpty(requiredLevel))
+            for (var i = 4; i < lvItems.SubItems.Count; i++)
             {
-                item.SubItems[4].Text = requiredLevel;
-                item.SubItems[4].ForeColor = ColorUpdate;
-                changed = true;
+                var item = lvItems.SubItems[i];
+
+                var value = TemplateHelper.GetCellValue(row, 4, stringTable);
+
+                if (item.Text != value && !string.IsNullOrEmpty(value))
+                {
+                    item.Text = value;
+                    item.ForeColor = ColorUpdate;
+                    changed = true;
+                }
             }
 
             return changed;

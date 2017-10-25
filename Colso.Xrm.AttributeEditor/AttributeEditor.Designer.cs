@@ -243,7 +243,7 @@
             // 
             // chFieldRequirement
             // 
-            this.chFieldRequirement.Text = "Field Requirement";
+            this.chFieldRequirement.Text = "Field RequiredLevel";
             this.chFieldRequirement.Width = 150;
             // 
             // chAction
