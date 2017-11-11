@@ -23,7 +23,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         public static IAttribute GetAttributeFromTypeName(string type)
         {
             var attributeType =
-            (from t in Assembly.GetExecutingAssembly().GetTypes()
+            (from t in typeof(AttributeBase).Assembly.GetTypes()
                 where t.GetInterfaces().Contains(typeof(IAttribute))
                       && t.Name.Equals(type + "Attribute", StringComparison.OrdinalIgnoreCase)
                 select t).FirstOrDefault();

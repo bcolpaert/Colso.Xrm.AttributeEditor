@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -40,9 +41,9 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         [Column("Date Format", CellValues.String)]
         public string DateFormat { get; set; }
 
-        public Row ToTableRow()
+        public ExcelDocumentProcessor.WorkbookRow ToTableRow()
         {
-            var newRow = new Row();
+            var cells = new List<ExcelDocumentProcessor.WorkbookCell>();
 
             var properties = GetType().GetProperties();
 
@@ -51,13 +52,20 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                newRow.AppendChild(TemplateHelper.CreateCell(column.Type, property.GetValue(this) as string));
+                cells.Add(new ExcelDocumentProcessor.WorkbookCell
+                {
+                    Type = (ExcelDocumentProcessor.CellTypes)column.Type,
+                    Value = property.GetValue(this) as string
+                });
             }
 
-            return newRow;
+            return new ExcelDocumentProcessor.WorkbookRow
+            {
+                Cells = cells
+            };
         }
 
-        public static AttributeMetadataRow FromTableRow(Row row, SharedStringTable sharedStrings)
+        public static AttributeMetadataRow FromTableRow(ExcelDocumentProcessor.WorkbookRow row)
         {
             var columns = GetColumns();
             var properties = typeof(AttributeMetadataRow).GetProperties();
@@ -71,7 +79,9 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                property.SetValue(result, TemplateHelper.GetCellValue(row, i, sharedStrings)?.Trim());
+                var value = row.Cells.Count() > i ? row.Cells.Skip(i).First().Value.Trim() : null;
+
+                property.SetValue(result, value);
             }
 
             return result;
@@ -124,7 +134,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 .ToArray();
         }
 
-        public void UpdateFromTemplateRow(Row row, SharedStringTable sharedStrings)
+        public void UpdateFromTemplateRow(ExcelDocumentProcessor.WorkbookRow row)
         {
             if (row == null)
             {
@@ -145,7 +155,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
                 var oldValue = property.GetValue(this);
-                var newValue = TemplateHelper.GetCellValue(row, i, sharedStrings);
+                var newValue = row.Cells.Count() > i ? row.Cells.Skip(i).First().Value : null;
 
                 if (!Equal(oldValue, newValue))
                 {
