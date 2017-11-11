@@ -82,7 +82,6 @@
             this.tsbCloseThisTab.Name = "tsbCloseThisTab";
             this.tsbCloseThisTab.Size = new System.Drawing.Size(23, 22);
             this.tsbCloseThisTab.Text = "Close this tab";
-            this.tsbCloseThisTab.Click += new System.EventHandler(this.tsbCloseThisTab_Click);
             // 
             // toolStripSeparator2
             // 
@@ -96,7 +95,6 @@
             this.tsbLoadEntities.Name = "tsbLoadEntities";
             this.tsbLoadEntities.Size = new System.Drawing.Size(93, 22);
             this.tsbLoadEntities.Text = "Load Entities";
-            this.tsbLoadEntities.Click += new System.EventHandler(this.tsbLoadEntities_Click);
             // 
             // tsbPublish
             // 
@@ -104,7 +102,6 @@
             this.tsbPublish.Name = "tsbPublish";
             this.tsbPublish.Size = new System.Drawing.Size(84, 22);
             this.tsbPublish.Text = "Save Entity";
-            this.tsbPublish.Click += new System.EventHandler(this.tsbPublish_Click);
             // 
             // toolStripSeparator1
             // 
@@ -139,7 +136,6 @@
             this.btnImport.TabIndex = 2;
             this.btnImport.Text = "Upload template";
             this.btnImport.UseVisualStyleBackColor = true;
-            this.btnImport.Click += new System.EventHandler(this.btnImport_Click);
             // 
             // btnSelectTemplate
             // 
@@ -149,7 +145,6 @@
             this.btnSelectTemplate.TabIndex = 4;
             this.btnSelectTemplate.Text = "...";
             this.btnSelectTemplate.UseVisualStyleBackColor = true;
-            this.btnSelectTemplate.Click += new System.EventHandler(this.btnSelectTemplate_Click);
             // 
             // lblEntity
             // 
@@ -176,7 +171,6 @@
             this.btnExport.TabIndex = 1;
             this.btnExport.Text = "Download template";
             this.btnExport.UseVisualStyleBackColor = true;
-            this.btnExport.Click += new System.EventHandler(this.btnExport_Click);
             // 
             // cmbEntities
             // 
@@ -185,7 +179,6 @@
             this.cmbEntities.Name = "cmbEntities";
             this.cmbEntities.Size = new System.Drawing.Size(338, 21);
             this.cmbEntities.TabIndex = 0;
-            this.cmbEntities.SelectedIndexChanged += new System.EventHandler(this.cmbEntities_SelectedIndexChanged);
             // 
             // gbAttributes
             // 
@@ -219,7 +212,6 @@
             this.lvAttributes.TabIndex = 0;
             this.lvAttributes.UseCompatibleStateImageBehavior = false;
             this.lvAttributes.View = System.Windows.Forms.View.Details;
-            this.lvAttributes.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvAttributes_ColumnClick);
             // 
             // chLogicalName
             // 

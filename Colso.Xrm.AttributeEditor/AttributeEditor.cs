@@ -1,19 +1,12 @@
-﻿using Colso.Xrm.AttributeEditor.AppCode;
-using Colso.Xrm.AttributeEditor.Forms;
-using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
-using McTools.Xrm.Connection;
+﻿using McTools.Xrm.Connection;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Metadata;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.ServiceModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
 using XrmToolBox.Extensibility.Args;
@@ -33,20 +26,113 @@ namespace Colso.Xrm.AttributeEditor
         /// <summary>
         /// Dynamics CRM 2011 organization service
         /// </summary>
-        private IOrganizationService service;
-
-        private bool workingstate = false;
-        private Dictionary<string, int> lvSortcolumns = new Dictionary<string, int>();
-
-        private System.Drawing.Color ColorCreate = System.Drawing.Color.Green;
-        private System.Drawing.Color ColorUpdate = System.Drawing.Color.Blue;
-        private System.Drawing.Color ColorDelete = System.Drawing.Color.Red;
+        private IOrganizationService _service;
+        private readonly AttributeManagerVM _viewModel;
 
         #endregion Variables
 
         public AttributeEditor()
         {
             InitializeComponent();
+
+            Panel informationPanel = null;
+
+            _viewModel = new AttributeManagerVM(() => _service, new ExcelDocumentProcessor());
+
+            var uiSynchronizationContext = TaskScheduler.FromCurrentSynchronizationContext();
+
+            // Bind form elements to View Model
+            _viewModel.PropertyChanged += (sender, args) =>
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    switch (args.PropertyName)
+                    {
+                        case "Busy":
+                        case "BusyMessage":
+                            ManageWorkingState(_viewModel.Busy);
+
+                            if (_viewModel.Busy && !string.IsNullOrEmpty(_viewModel.BusyMessage))
+                            {
+                                if (informationPanel == null)
+                                    informationPanel =
+                                        InformationPanel.GetInformationPanel(this, _viewModel.BusyMessage, 340, 150);
+                                else
+                                {
+                                    informationPanel.Text = _viewModel.BusyMessage;
+                                }
+                            }
+                            else if (informationPanel != null)
+                            {
+                                informationPanel.Dispose();
+                                informationPanel = null;
+                            }
+                            break;
+                        case "TemplateForUpload":
+                            txtTemplatePath.Text = _viewModel.TemplateForUpload;
+                            break;
+                    }
+                }, CancellationToken.None, TaskCreationOptions.None, uiSynchronizationContext);
+            };
+
+            tsbLoadEntities.Click += (sender, args) => _viewModel.LoadEntitiesCommand.Execute(sender);
+
+            BindToObvervableCollection(cmbEntities.Items, _viewModel.Entities);
+            cmbEntities.SelectedIndexChanged += (sender, args) =>
+            {
+                _viewModel.SelectedEntity = cmbEntities.SelectedItem as string;
+            };
+
+            BindToObvervableCollection(lvAttributes.Columns, _viewModel.ColumnHeadings, x => new ColumnHeader { Text = x });
+            BindToObvervableCollection(lvAttributes.Items, _viewModel.Attributes);
+
+            btnExport.Click += (sender, args) => _viewModel.DownloadTemplateCommand.Execute(sender);
+
+            btnSelectTemplate.Click += (sender, args) => _viewModel.SelectTemplateForUploadCommand.Execute(sender);
+
+            btnImport.Click += (sender, args) => _viewModel.UploadTemplateCommand.Execute(sender);
+
+            cbCreate.CheckedChanged += (sender, args) => _viewModel.Create = cbCreate.Checked;
+            cbUpdate.CheckedChanged += (sender, args) => _viewModel.Update = cbUpdate.Checked;
+            cbDelete.CheckedChanged += (sender, args) => _viewModel.Delete = cbUpdate.Checked;
+
+            tsbPublish.Click += (sender, args) => _viewModel.SaveChangesCommand.Execute(sender);
+        }
+
+        private void BindToObvervableCollection<T>(IList collection, ObservableCollection<T> observableCollection, Func<T, object> castItem = null)
+        {
+            var uiSynchronizationContext = TaskScheduler.FromCurrentSynchronizationContext();
+
+            observableCollection.CollectionChanged += (sender, args) =>
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    switch (args.Action)
+                    {
+                        case NotifyCollectionChangedAction.Add:
+                            foreach (T item in args.NewItems)
+                            {
+                                object castedItem = castItem != null ? castItem(item) : item;
+
+                                if (!collection.Contains(castedItem))
+                                    collection.Add(castedItem);
+                            }
+                            break;
+                        case NotifyCollectionChangedAction.Move:
+                        case NotifyCollectionChangedAction.Remove:
+                        case NotifyCollectionChangedAction.Replace:
+                        case NotifyCollectionChangedAction.Reset:
+                            collection.Clear();
+                            foreach (T item in observableCollection)
+                            {
+                                object castedItem = castItem != null ? castItem(item) : item;
+
+                                collection.Add(castedItem);
+                            }
+                            break;
+                    }
+                }, CancellationToken.None, TaskCreationOptions.None, uiSynchronizationContext);
+            };
         }
 
         #region XrmToolbox
@@ -103,7 +189,7 @@ namespace Colso.Xrm.AttributeEditor
 
         public void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
         {
-            service = newService;
+            _service = newService;
         }
 
         public string GetCompany()
@@ -123,624 +209,14 @@ namespace Colso.Xrm.AttributeEditor
 
         #endregion XrmToolbox
 
-        #region Form events
-
-        private void tsbCloseThisTab_Click(object sender, EventArgs e)
-        {
-            if (OnCloseTool != null)
-                OnCloseTool(this, null);
-        }
-
-        private void tsbLoadEntities_Click(object sender, EventArgs e)
-        {
-            if (service == null)
-            {
-                if (OnRequestConnection != null)
-                {
-                    var args = new RequestConnectionEventArgs
-                    {
-                        ActionName = "Load",
-                        Control = this
-                    };
-                    OnRequestConnection(this, args);
-                }
-            }
-            else
-            {
-                PopulateEntities();
-            }
-        }
-
-        private void tsbPublish_Click(object sender, EventArgs e)
-        {
-            SaveChanges();
-        }
-
-        private void cmbEntities_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            PopulateAttributes();
-        }
-
-        private void lvAttributes_ColumnClick(object sender, ColumnClickEventArgs e)
-        {
-            SetListViewSorting(lvAttributes, e.Column);
-        }
-
-        private void btnImport_Click(object sender, EventArgs e)
-        {
-            ImportAttributes();
-        }
-
-        private void btnExport_Click(object sender, EventArgs e)
-        {
-            ExportAttributes();
-        }
-
-        private void btnSelectTemplate_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog file = new OpenFileDialog();
-            if (file.ShowDialog() == DialogResult.OK)
-            {
-                txtTemplatePath.Text = file.FileName;
-            }
-        }
-
-        #endregion Form events
-
         #region Methods
 
         private void ManageWorkingState(bool working)
         {
-            workingstate = working;
             cmbEntities.Enabled = !working;
             gbSettings.Enabled = !working;
             gbAttributes.Enabled = !working;
             Cursor = working ? Cursors.WaitCursor : Cursors.Default;
-        }
-
-        private void PopulateEntities()
-        {
-            if (!workingstate)
-            {
-                // Reinit other controls
-                cmbEntities.Items.Clear();
-                ManageWorkingState(true);
-
-                informationPanel = InformationPanel.GetInformationPanel(this, "Loading entities...", 340, 150);
-
-                // Launch treatment
-                var bwFill = new BackgroundWorker();
-                bwFill.DoWork += (sender, e) =>
-                {
-                    // Retrieve 
-                    List<EntityMetadata> sourceList = MetadataHelper.RetrieveEntities(service);
-
-                    // Prepare list of items
-                    var sourceEntitiesList = new List<EntityItem>();
-
-                    foreach (EntityMetadata entity in sourceList)
-                        sourceEntitiesList.Add(new EntityItem(entity));
-
-                    e.Result = sourceEntitiesList.OrderBy(i => i.DisplayName).ToArray();
-                };
-                bwFill.RunWorkerCompleted += (sender, e) =>
-                {
-                    informationPanel.Dispose();
-
-                    if (e.Error != null)
-                    {
-                        MessageBox.Show(this, "An error occured: " + e.Error.Message, "Error", MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error);
-                    }
-                    else
-                    {
-                        var items = (EntityItem[])e.Result;
-                        if (items.Length == 0)
-                        {
-                            MessageBox.Show(this, "The system does not contain any entities", "Warning", MessageBoxButtons.OK,
-                                            MessageBoxIcon.Warning);
-                        }
-                        else
-                        {
-                            cmbEntities.DisplayMember = "DisplayName";
-                            cmbEntities.ValueMember = "SchemaName";
-                            cmbEntities.Items.AddRange(items);
-                        }
-                    }
-
-                    ManageWorkingState(false);
-                };
-                bwFill.RunWorkerAsync();
-            }
-        }
-
-        private void PopulateAttributes()
-        {
-            if (!workingstate)
-            {
-                // Reinit other controls
-                lvAttributes.Items.Clear();
-
-                // Setup Column Headings
-                lvAttributes.Columns.Clear();
-                lvAttributes.Columns.Add("Action");
-                foreach (var column in AttributeMetadataRow.GetColumns())
-                    lvAttributes.Columns.Add(column.Header);
-
-                if (cmbEntities.SelectedItem != null)
-                {
-                    var entityitem = (EntityItem)cmbEntities.SelectedItem;
-
-                    if (!string.IsNullOrEmpty(entityitem.LogicalName))
-                    {
-                        ManageWorkingState(true);
-
-                        // Launch treatment
-                        var bwFill = new BackgroundWorker();
-                        bwFill.DoWork += (sender, e) =>
-                        {
-                            // Retrieve 
-                            var entity = MetadataHelper.RetrieveEntity(entityitem.LogicalName, service);
-
-                            // Prepare list of items
-                            var itemList = new List<ListViewItem>();
-
-                            foreach (AttributeMetadata att in entity.Attributes)
-                            {
-                                if (att.IsValidForUpdate.Value && att.IsCustomizable.Value)
-                                {
-                                    var attribute = EntityHelper.GetAttributeFromTypeName(att.AttributeType.Value.ToString());
-
-                                    if (attribute == null)
-                                        continue;
-
-                                    attribute.LoadFromAttributeMetadata(att);
-
-                                    var row = attribute.ToAttributeMetadataRow();
-
-                                    var item = row.ToListViewItem();
-
-                                    item.Tag = att;
-
-                                    itemList.Add(item);
-                                }
-                            }
-
-                            e.Result = itemList;
-                        };
-                        bwFill.RunWorkerCompleted += (sender, e) =>
-                        {
-                            if (e.Error != null)
-                            {
-                                MessageBox.Show(this, "An error occured: " + e.Error.Message, "Error", MessageBoxButtons.OK,
-                                                MessageBoxIcon.Error);
-                            }
-                            else
-                            {
-                                var items = (List<ListViewItem>)e.Result;
-                                if (items.Count == 0)
-                                {
-                                    MessageBox.Show(this, "The entity does not contain any attributes", "Warning", MessageBoxButtons.OK,
-                                                    MessageBoxIcon.Warning);
-                                }
-                                else
-                                {
-                                    lvAttributes.Items.AddRange(items.ToArray());
-                                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Format("{0} attributes loaded", items.Count)));
-                                }
-                            }
-
-                            ManageWorkingState(false);
-                        };
-                        bwFill.RunWorkerAsync();
-                    }
-                }
-            }
-        }
-
-        private void ExportAttributes()
-        {
-            if (cmbEntities.SelectedItem == null)
-            {
-                MessageBox.Show("You must select an entity", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            ManageWorkingState(true);
-
-            var saveFileDlg = new SaveFileDialog()
-            {
-                Title = "Save the entity template",
-                Filter = "Excel Workbook|*.xlsx",
-                FileName = "attributeeditor.xlsx"
-            };
-            saveFileDlg.ShowDialog();
-
-            var selectedLogicalName = (EntityItem) cmbEntities.SelectedItem;
-
-            // If the file name is not an empty string open it for saving.
-            if (!string.IsNullOrEmpty(saveFileDlg.FileName))
-            {
-                informationPanel = InformationPanel.GetInformationPanel(this, "Exporting attributes...", 340, 150);
-                SendMessageToStatusBar(this, new StatusBarMessageEventArgs("Initializing attributes..."));
-
-                var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
-                bwTransferData.DoWork += (sender, e) =>
-                {
-                    var attributes = (List<AttributeMetadata>)e.Argument;
-                    var entityitem = selectedLogicalName;
-                    var errors = new List<Tuple<string, string>>();
-
-                    try
-                    {
-                        using (SpreadsheetDocument document = SpreadsheetDocument.Create(saveFileDlg.FileName, SpreadsheetDocumentType.Workbook))
-                        {
-                            WorkbookPart workbookPart;
-                            Sheets sheets;
-                            SheetData sheetData;
-                            TemplateHelper.InitDocument(document, out workbookPart, out sheets);
-                            TemplateHelper.CreateSheet(workbookPart, sheets, entityitem.LogicalName, out sheetData);
-
-                            #region Header
-                            
-                            var headerRow = new Row();
-
-                            foreach (var field in AttributeMetadataRow.GetColumns())
-                                headerRow.AppendChild(TemplateHelper.CreateCell(field.Type, field.Header));
-
-                            sheetData.AppendChild(headerRow);
-
-                            #endregion
-
-                            #region Data
-
-                            foreach (var attribute in attributes)
-                            {
-                                if (attribute == null)
-                                    continue;
-
-                                var attributeType =
-                                    EntityHelper.GetAttributeFromTypeName(attribute.AttributeType.Value.ToString());
-
-                                if (attributeType == null)
-                                    continue;
-
-                                attributeType.LoadFromAttributeMetadata(attribute);
-
-                                var metadataRow = attributeType.ToAttributeMetadataRow();
-
-                                sheetData.AppendChild(metadataRow.ToTableRow());
-                            }
-
-                            #endregion
-
-                            workbookPart.Workbook.Save();
-                        }
-                    }
-                    catch (FaultException<OrganizationServiceFault> error)
-                    {
-                        errors.Add(new Tuple<string, string>(entityitem.LogicalName, error.Message));
-                    }
-
-                    e.Result = errors;
-                };
-                bwTransferData.RunWorkerCompleted += (sender, e) =>
-                {
-                    Controls.Remove(informationPanel);
-                    informationPanel.Dispose();
-                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Empty));
-                    ManageWorkingState(false);
-
-                    var errors = (List<Tuple<string, string>>)e.Result;
-
-                    if (errors.Count > 0)
-                    {
-                        var errorDialog = new ErrorList((List<Tuple<string, string>>)e.Result);
-                        errorDialog.ShowDialog(ParentForm);
-                    }
-                };
-                bwTransferData.ProgressChanged += (sender, e) =>
-                {
-                    InformationPanel.ChangeInformationPanelMessage(informationPanel, e.UserState.ToString());
-                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs(e.UserState.ToString()));
-                };
-                bwTransferData.RunWorkerAsync(lvAttributes.Items.Cast<ListViewItem>().Select(v => (AttributeMetadata)v.Tag).ToList());
-            }
-        }
-
-        private void ImportAttributes()
-        {
-            if (cmbEntities.SelectedItem == null)
-            {
-                MessageBox.Show("You must select an entity", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (string.IsNullOrEmpty(txtTemplatePath.Text))
-            {
-                MessageBox.Show("You must select a template file", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            ManageWorkingState(true);
-
-            informationPanel = InformationPanel.GetInformationPanel(this, "Loading template...", 340, 150);
-            SendMessageToStatusBar(this, new StatusBarMessageEventArgs("Loading template..."));
-
-            var entityItem = (EntityItem) cmbEntities.SelectedItem;
-            var items = new List<ListViewItem>();
-
-            var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
-            bwTransferData.DoWork += (sender, e) =>
-            {
-                var attributes = (List<ListViewItem>)e.Argument;
-                var entityitem = entityItem;
-                var errors = new List<Tuple<string, string>>();
-                var nrOfCreates = 0;
-                var nrOfUpdates = 0;
-                var nrOfDeletes = 0;
-
-                try
-                {
-                    using (FileStream stream = File.Open(txtTemplatePath.Text, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (SpreadsheetDocument document = SpreadsheetDocument.Open(stream, false))
-                    {
-                        var sheet = document.WorkbookPart.Workbook.Sheets.Cast<Sheet>().Where(s => s.Name == entityitem.LogicalName).FirstOrDefault();
-                        if (sheet == null)
-                        {
-                            errors.Add(new Tuple<string, string>(entityitem.LogicalName, "Entity sheet is not found in the template!"));
-                        }
-                        else
-                        {
-                            var sheetid = sheet.Id;
-                            var sheetData = ((WorksheetPart)document.WorkbookPart.GetPartById(sheetid)).Worksheet.GetFirstChild<SheetData>();
-                            var templaterows = sheetData.ChildElements.Cast<Row>().ToArray();
-                            // For shared strings, look up the value in the shared strings table.
-                            var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault()?.SharedStringTable;
-
-                            // Check all existing attributes
-                            foreach (var item in attributes)
-                            {
-                                var row = templaterows.Where(r => TemplateHelper.GetCellValue(r, 0, stringTable) == item.SubItems[1].Text).FirstOrDefault();
-
-                                var attributeMetadataRow = AttributeMetadataRow.FromListViewItem(item);
-
-                                attributeMetadataRow.UpdateFromTemplateRow(row, stringTable);
-                                var listViewItem = attributeMetadataRow.ToListViewItem();
-                                listViewItem.Tag = item.Tag;
-
-                                items.Add(listViewItem);
-
-                                if (attributeMetadataRow.Action == "Update")
-                                    nrOfUpdates++;
-                                else if (attributeMetadataRow.Action == "Delete")
-                                    nrOfDeletes++;
-
-                                InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing new attribute {0}...", item.Text));
-                            }
-
-                            // Check new attributes
-                            for (int i = 1; i < templaterows.Length; i++)
-                            {
-                                var row = templaterows[i];
-                                var logicalname = TemplateHelper.GetCellValue(row, 0, stringTable);
-
-                                if (!string.IsNullOrEmpty(logicalname))
-                                {
-                                    var attribute = attributes.Select(a => (AttributeMetadata)a.Tag).Where(a => a.LogicalName == logicalname).FirstOrDefault();
-
-                                    if (attribute == null)
-                                    {
-                                        InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing new attribute {0}...", logicalname));
-
-                                        var attributeMetadataRow = AttributeMetadataRow.FromTableRow(row, stringTable);
-                                        attributeMetadataRow.Action = "Create";
-
-                                        items.Add(attributeMetadataRow.ToListViewItem());
-
-                                        nrOfCreates++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Format("{0} create; {1} update; {2} delete", nrOfCreates, nrOfUpdates, nrOfDeletes)));
-                }
-                catch (FaultException<OrganizationServiceFault> error)
-                {
-                    errors.Add(new Tuple<string, string>(entityitem.LogicalName, error.Message));
-                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Empty));
-                }
-
-                e.Result = errors;
-            };
-            bwTransferData.RunWorkerCompleted += (sender, e) =>
-            {
-                lvAttributes.BeginUpdate();
-
-                // Add attributes here to avoid accessing lvAttributes across threads.
-                lvAttributes.Items.Clear();
-                foreach (var item in items)
-                    lvAttributes.Items.Add(item);
-
-                lvAttributes.EndUpdate();
-
-                Controls.Remove(informationPanel);
-                informationPanel.Dispose();
-                ManageWorkingState(false);
-
-                var errors = (List<Tuple<string, string>>)e.Result;
-
-                if (errors.Count > 0)
-                {
-                    var errorDialog = new ErrorList((List<Tuple<string, string>>)e.Result);
-                    errorDialog.ShowDialog(ParentForm);
-                }
-            };
-            bwTransferData.ProgressChanged += (sender, e) =>
-            {
-                InformationPanel.ChangeInformationPanelMessage(informationPanel, e.UserState.ToString());
-                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(e.UserState.ToString()));
-            };
-            bwTransferData.RunWorkerAsync(lvAttributes.Items.Cast<ListViewItem>().ToList());
-        }
-
-        private void SaveChanges()
-        {
-            if (cmbEntities.SelectedItem == null)
-            {
-                MessageBox.Show("You must select an entity", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            ManageWorkingState(true);
-            informationPanel = InformationPanel.GetInformationPanel(this, "Processing entity...", 340, 150);
-
-            var entityitem = (EntityItem) cmbEntities.SelectedItem;
-            var itemsToProcess = lvAttributes.Items.Cast<ListViewItem>().ToList();
-
-            var bwTransferData = new BackgroundWorker { WorkerReportsProgress = true };
-            bwTransferData.DoWork += (sender, e) =>
-            {
-                var errors = new List<Tuple<string, string>>();
-                var helper = new EntityHelper(entityitem.LogicalName, entityitem.LanguageCode, service);
-
-                foreach (var item in itemsToProcess)
-                {
-                    // TODO: Validate each row
-                    //if (item.SubItems.Count == 6)
-                    //{ 
-                        var action = item.SubItems[0].Text;
-
-                        if (!string.IsNullOrEmpty(action) && !string.IsNullOrEmpty(item.Text))
-                        {
-                            var attributeMetadata = AttributeMetadataRow.FromListViewItem(item);
-
-                            InformationPanel.ChangeInformationPanelMessage(informationPanel, string.Format("Processing attribute {0}...", attributeMetadata.LogicalName));
-
-                            try
-                            {
-                                var attribute = EntityHelper.GetAttributeFromTypeName(attributeMetadata.AttributeType);
-
-                                if (attribute == null)
-                                {
-                                    errors.Add(new Tuple<string, string>(item.Text,
-                                        $"The Attribute Type \"{attributeMetadata.AttributeType}\" is not yet supported."));
-                                    continue;
-                                }
-
-                                attribute.LoadFromAttributeMetadataRow(attributeMetadata);
-                                attribute.Entity = entityitem.LogicalName;
-
-                                switch (action)
-                                {
-                                    case "Create":
-                                        if (cbCreate.Checked) attribute.CreateAttribute(service);
-                                        break;
-                                    case "Update":
-                                        if (cbUpdate.Checked) attribute.UpdateAttribute(service);
-                                        break;
-                                    case "Delete":
-                                        if (cbDelete.Checked) attribute.DeleteAttribute(service);
-                                        break;
-                                }
-                            }
-                            catch (FaultException<OrganizationServiceFault> error)
-                            {
-                                errors.Add(new Tuple<string, string>(item.Text, error.Message));
-                            }
-                        }
-                    //}
-                    //else
-                    //{
-                    //    errors.Add(new Tuple<string, string>(item.Name, string.Format("Invalid row! Unexpected subitems count [{0}]", item.SubItems.Count)));
-                    //}
-                }
-
-                helper.Publish();
-                e.Result = errors;
-            };
-            bwTransferData.RunWorkerCompleted += (sender, e) =>
-            {
-                Controls.Remove(informationPanel);
-                informationPanel.Dispose();
-                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(string.Empty));
-                ManageWorkingState(false);
-
-                var errors = (List<Tuple<string, string>>)e.Result;
-
-                if (errors.Count > 0)
-                {
-                    var errorDialog = new ErrorList((List<Tuple<string, string>>)e.Result);
-                    errorDialog.ShowDialog(ParentForm);
-                }
-
-                PopulateAttributes();
-            };
-            bwTransferData.ProgressChanged += (sender, e) =>
-            {
-                InformationPanel.ChangeInformationPanelMessage(informationPanel, e.UserState.ToString());
-                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(e.UserState.ToString()));
-            };
-            bwTransferData.RunWorkerAsync();
-        }
-
-        private void Entity_OnStatusMessage(object sender, EventArgs e)
-        {
-            SendMessageToStatusBar(this, new StatusBarMessageEventArgs(((StatusMessageEventArgs)e).Message));
-        }
-
-        private void SetListViewSorting(ListView listview, int column)
-        {
-            int currentSortcolumn = -1;
-            if (lvSortcolumns.ContainsKey(listview.Name))
-                currentSortcolumn = lvSortcolumns[listview.Name];
-            else
-                lvSortcolumns.Add(listview.Name, currentSortcolumn);
-
-            if (currentSortcolumn != column)
-            {
-                lvSortcolumns[listview.Name] = column;
-                listview.Sorting = SortOrder.Ascending;
-            }
-            else
-            {
-                if (listview.Sorting == SortOrder.Ascending)
-                    listview.Sorting = SortOrder.Descending;
-                else
-                    listview.Sorting = SortOrder.Ascending;
-            }
-
-            listview.ListViewItemSorter = new ListViewItemComparer(column, listview.Sorting);
-        }
-
-        private bool IsChanged(ListViewItem lvItems, Row row, SharedStringTable stringTable)
-        {
-            var changed = false;
-
-            var displayName = TemplateHelper.GetCellValue(row, 1, stringTable);
-            if (lvItems.SubItems[1].Text != displayName && !string.IsNullOrEmpty(displayName))
-            {
-                lvItems.SubItems[1].Text = displayName;
-                lvItems.SubItems[1].ForeColor = ColorUpdate;
-                changed = true;
-            }
-
-            for (var i = 4; i < lvItems.SubItems.Count; i++)
-            {
-                var item = lvItems.SubItems[i];
-
-                var value = TemplateHelper.GetCellValue(row, 4, stringTable);
-
-                if (item.Text != value && !string.IsNullOrEmpty(value))
-                {
-                    item.Text = value;
-                    item.ForeColor = ColorUpdate;
-                    changed = true;
-                }
-            }
-
-            return changed;
         }
 
         #endregion Methods
