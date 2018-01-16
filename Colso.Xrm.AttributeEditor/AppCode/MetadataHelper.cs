@@ -8,6 +8,19 @@ using System.Xml;
 
 namespace Colso.Xrm.AttributeEditor.AppCode
 {
+    public interface IMetadataHelper
+    {
+        List<EntityMetadata> RetrieveEntities(IOrganizationService service);
+    }
+
+    public class TestableMetadataHelper : IMetadataHelper
+    {
+        public List<EntityMetadata> RetrieveEntities(IOrganizationService service)
+        {
+            return MetadataHelper.RetrieveEntities(service);
+        }
+    }
+
     internal class MetadataHelper
     {
         internal static EntityMetadata GetEntityMetadata(string logicalname, EntityFilters filters, IOrganizationService service)
