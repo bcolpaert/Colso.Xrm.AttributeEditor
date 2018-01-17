@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Colso.Xrm.AttributeEditor.AppCode;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
-using XrmToolBox.Extensibility;
 
 namespace Colso.Xrm.AttributeEditor
 {
-    class AttributeEditorViewModel
+    public class AttributeEditorViewModel
     {
         private readonly IMetadataHelper _metadataHelper;
         public IOrganizationService Service { get; set; }
@@ -32,77 +28,68 @@ namespace Colso.Xrm.AttributeEditor
             Entities = new List<EntityItem>();
         }
 
-        public void LoadEntities()
+        public async Task LoadEntities()
         {
-            if (Service == null)
-            {
-                OnRequestConnection?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                PopulateEntities();
-            }
+            //if (Service == null)
+            //{
+            //    OnRequestConnection?.Invoke(this, EventArgs.Empty);
+            //}
+            //else
+            //{
+                await PopulateEntities();
+            //}
         }
 
-        private void PopulateEntities()
+        private async Task PopulateEntities()
         {
-            if (!WorkingState)
+            if (WorkingState)
+                return;
+
+            // Reinit other controls
+            Entities.Clear();
+            WorkingState = true;
+            OnWorkingStateChanged?.Invoke(this, EventArgs.Empty);
+
+            var infoPanelEventArgs =
+                new GetInformationPanelEventArgs { Message = "Loading Entities...", Width = 340, Height = 150 };
+            OnGetInformationPanel?.Invoke(this, infoPanelEventArgs);
+            var informationPanel = infoPanelEventArgs.Panel;
+
+            var sourceEntitiesList = new List<EntityItem>();
+
+            try
             {
-                // Reinit other controls
-                Entities.Clear();
-                OnEntitiesListChanged?.Invoke(this, EventArgs.Empty);
-                WorkingState = true;
-                OnWorkingStateChanged?.Invoke(this, EventArgs.Empty);
-
-                var infoPanelEventArgs =
-                    new GetInformationPanelEventArgs {Message = "Loading Entities...", Width = 340, Height = 150};
-                OnGetInformationPanel?.Invoke(this, infoPanelEventArgs);
-                var informationPanel = infoPanelEventArgs.Panel;
-
-                // Launch treatment
-                var bwFill = new BackgroundWorker();
-                bwFill.DoWork += (sender, e) =>
+                await Task.Factory.StartNew(() =>
                 {
                     // Retrieve 
-                    List<EntityMetadata> sourceList = _metadataHelper.RetrieveEntities(Service);
+                    var sourceList = _metadataHelper.RetrieveEntities(Service);
 
                     // Prepare list of items
-                    var sourceEntitiesList = new List<EntityItem>();
-
                     foreach (EntityMetadata entity in sourceList)
                         sourceEntitiesList.Add(new EntityItem(entity));
+                });
 
-                    e.Result = sourceEntitiesList.OrderBy(i => i.DisplayName).ToArray();
-                };
-                bwFill.RunWorkerCompleted += (sender, e) =>
+                informationPanel.Dispose();
+
+                if (sourceEntitiesList.Count == 0)
                 {
-                    informationPanel.Dispose();
-
-                    if (e.Error != null)
-                    {
-                        OnShowMessageBox?.Invoke(this, new MessageBoxEventArgs("An error occured: " + e.Error.Message, "Error", MessageBoxButtons.OK,
-                            MessageBoxIcon.Error));
-                    }
-                    else
-                    {
-                        var items = (EntityItem[])e.Result;
-                        if (items.Length == 0)
-                        {
-                            OnShowMessageBox?.Invoke(this, new MessageBoxEventArgs("The system does not contain any entities", "Warning", MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning));
-                        }
-                        else
-                        {
-                            Entities.AddRange(items);
-                            OnEntitiesListChanged?.Invoke(this, EventArgs.Empty);
-                        }
-                    }
-
-                    WorkingState = false;
-                    OnWorkingStateChanged?.Invoke(this, EventArgs.Empty);
-                };
-                bwFill.RunWorkerAsync();
+                    OnShowMessageBox?.Invoke(this, new MessageBoxEventArgs("The system does not contain any entities", "Warning", MessageBoxButtons.OK,
+                                        MessageBoxIcon.Warning));
+                }
+                else
+                {
+                    Entities.AddRange(sourceEntitiesList);
+                    OnEntitiesListChanged?.Invoke(this, EventArgs.Empty);
+                }
             }
+            catch (Exception ex)
+            {
+                OnShowMessageBox?.Invoke(this, new MessageBoxEventArgs("An error occured: " + ex.Message, "Error", MessageBoxButtons.OK,
+                                MessageBoxIcon.Error));
+            }
+
+            WorkingState = false;
+            OnWorkingStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public class GetInformationPanelEventArgs : EventArgs
@@ -110,7 +97,7 @@ namespace Colso.Xrm.AttributeEditor
             public string Message { get; set; }
             public int Width { get; set; }
             public int Height { get; set; }
-            public Panel Panel { get; set; }
+            public IDisposable Panel { get; set; }
         }
 
         public class MessageBoxEventArgs : EventArgs
