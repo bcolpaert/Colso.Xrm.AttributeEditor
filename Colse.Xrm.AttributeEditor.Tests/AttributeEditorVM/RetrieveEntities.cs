@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Castle.Components.DictionaryAdapter;
 using Colso.Xrm.AttributeEditor;
 using Colso.Xrm.AttributeEditor.AppCode;
 using Microsoft.Xrm.Sdk;
@@ -15,60 +12,80 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
 {
     public class RetrieveEntities
     {
+        // Mocks
+        private Mock<IMetadataHelper> _metadataHelperMock;
+        private Mock<IOrganizationService> _serviceMock;
+        private Mock<IDisposable> _infoPanelMock;
+
+        private AttributeEditorViewModel _uut;
+        private List<EntityMetadata> _entityMetadata;
+
+
+        [SetUp]
+        public void Setup()
+        {
+            _entityMetadata = new List<EntityMetadata>
+            {
+                new EntityMetadata(),
+                new EntityMetadata()
+            };
+
+            _metadataHelperMock = new Mock<IMetadataHelper>();
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+                .Returns(_entityMetadata);
+
+            _serviceMock = new Mock<IOrganizationService>();
+
+            _infoPanelMock = new Mock<IDisposable>();
+
+            _uut = new AttributeEditorViewModel(_metadataHelperMock.Object);
+
+            _uut.Service = new Mock<IOrganizationService>().Object;
+            _uut.OnGetInformationPanel += (sender, args) => { args.Panel = _infoPanelMock.Object; };
+        }
+
         [Test]
         public async Task RetrieveEntities_DoesNotRunWhenWorkingTrue()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
+            // Arrange
+            _uut.WorkingState = true;
 
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-            uut.WorkingState = true;
+            // Act
+            await _uut.LoadEntities();
 
-            await uut.LoadEntities();
-
-            metadataHelper.Verify(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()), Times.Never);
+            // Assert
+            _metadataHelperMock.Verify(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()), Times.Never);
         }
 
         [Test]
         public async Task RetrieveEntities_ClearsExistingEntities()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
+            // Add an extra entity before loading entities
+            _uut.Entities.Add(new EntityItem(new EntityMetadata()));
 
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
-                .Returns(new List<EntityMetadata>());
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
+            // Act
+            await _uut.LoadEntities();
 
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
-            uut.Entities.Add(new EntityItem(new EntityMetadata()));
-
-            await uut.LoadEntities();
-
-            Assert.That(uut.Entities.Count == 0);
+            // Assert that extra entity is not includes in result
+            Assert.That(_uut.Entities.Count, Is.EqualTo(_entityMetadata.Count));
         }
 
         [Test]
         public async Task RetrieveEntities_SetsWorkingStateToTrueBeforeLoadingEntities()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-            var metadataLoaded = false;
+            var entitiesLoaded = false;
             var workingState = false;
 
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+                .Callback(() => { entitiesLoaded = true; });
 
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
-                .Returns(new List<EntityMetadata>())
-                .Callback(() => { metadataLoaded = true; });
-            uut.OnWorkingStateChanged += (sender, args) =>
+            _uut.OnWorkingStateChanged += (sender, args) =>
             {
-                if (metadataLoaded == false)
-                    workingState = uut.WorkingState;
+                if (entitiesLoaded == false)
+                    workingState = _uut.WorkingState;
             };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(workingState, Is.True);
         }
@@ -76,27 +93,19 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
         [Test]
         public async Task RetrieveEntities_SetsWorkingStateToFalseAfterLoadingEntities()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
-            var metadataLoaded = false;
+            var retrieveEntitiesCalled = false;
             var workingState = true;
 
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
-                .Returns(new List<EntityMetadata>())
-                .Callback(() => { metadataLoaded = true; });
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+                .Callback(() => { retrieveEntitiesCalled = true; });
 
-            uut.OnWorkingStateChanged += (sender, args) =>
+            _uut.OnWorkingStateChanged += (sender, args) =>
             {
-                if (metadataLoaded)
-                    workingState = uut.WorkingState;
+                if (retrieveEntitiesCalled)
+                    workingState = _uut.WorkingState;
             };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(workingState, Is.False);
         }
@@ -104,52 +113,30 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
         [Test]
         public async Task RetrieveEntities_PopulatesEntityItems()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
-            var metadata = new List<EntityMetadata>
-            {
-                new EntityMetadata(),
-                new EntityMetadata()
-            };
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>())).Returns(metadata);
-
             int count = 0;
-            uut.OnEntitiesListChanged += (sender, args) => { count = uut.Entities.Count; };
+            _uut.OnEntitiesListChanged += (sender, args) => { count = _uut.Entities.Count; };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
-            Assert.That(count, Is.EqualTo(2));
+            Assert.That(count, Is.EqualTo(_entityMetadata.Count));
         }
 
         [Test]
         public async Task RetrieveEntities_DisplaysInformationPanelBeforeLoadingEntities()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
-            var entitiesLoaded = false;
+            var retrieveEntitiesCalled = false;
             var infoPanelLoaded = false;
 
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
-                .Returns(new List<EntityMetadata>()).Callback(
-                    () => { entitiesLoaded = true; });
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+                .Callback(() => { retrieveEntitiesCalled = true; });
 
-            uut.OnGetInformationPanel += (sender, args) =>
+            _uut.OnGetInformationPanel += (sender, args) =>
             {
-                if (!entitiesLoaded)
+                if (!retrieveEntitiesCalled)
                     infoPanelLoaded = true;
             };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(infoPanelLoaded, Is.True);
         }
@@ -157,29 +144,21 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
         [Test]
         public async Task RetrieveEntities_DisposesInformationPanelAfterLoadingEntities()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-            
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            var entitiesLoaded = false;
+            var retrieveEntities = false;
             var infoPanelDisposed = false;
 
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
-                .Returns(new List<EntityMetadata>())
-                .Callback(() => { entitiesLoaded = true; });
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+                .Returns(_entityMetadata)
+                .Callback(() => { retrieveEntities = true; });
 
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
-            infoPanel.Setup(x => x.Dispose()).Callback(() =>
+            _infoPanelMock.Setup(x => x.Dispose()).Callback(() =>
             {
-                if (!entitiesLoaded)
+                if (!retrieveEntities)
                     throw new Exception("InfoPanel disposed before entities loaded");
                 infoPanelDisposed = true;
             });
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(infoPanelDisposed, Is.True);
         }
@@ -187,20 +166,13 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
         [Test]
         public async Task RetrieveEntities_ShowsMessageBoxOnError()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
                 .Throws(new Exception());
 
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
             var messageBoxShown = false;
-            uut.OnShowMessageBox += (sender, args) => { messageBoxShown = true; };
+            _uut.OnShowMessageBox += (sender, args) => { messageBoxShown = true; };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(messageBoxShown, Is.True);
         }
@@ -208,22 +180,28 @@ namespace Colse.Xrm.AttributeEditor.Tests.AttributeEditorVM
         [Test]
         public async Task RetrieveEntities_ShowsMessageWhenZeroEntitiesFound()
         {
-            var metadataHelper = new Mock<IMetadataHelper>();
-
-            var uut = new AttributeEditorViewModel(metadataHelper.Object);
-
-            metadataHelper.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
+            _metadataHelperMock.Setup(x => x.RetrieveEntities(It.IsAny<IOrganizationService>()))
                 .Returns(new List<EntityMetadata>());
 
-            var infoPanel = new Mock<IDisposable>();
-            uut.OnGetInformationPanel += (sender, args) => { args.Panel = infoPanel.Object; };
-
             var messageBoxShown = false;
-            uut.OnShowMessageBox += (sender, args) => { messageBoxShown = true; };
+            _uut.OnShowMessageBox += (sender, args) => { messageBoxShown = true; };
 
-            await uut.LoadEntities();
+            await _uut.LoadEntities();
 
             Assert.That(messageBoxShown, Is.True);
+        }
+
+        [Test]
+        public async Task RetrieveEntities_RequestsConnectionWhenConnectionNull()
+        {
+            _uut.Service = null;
+
+            var connectionRequested = false;
+            _uut.OnRequestConnection += (sender, args) => { connectionRequested = true; };
+
+            await _uut.LoadEntities();
+
+            Assert.That(connectionRequested, Is.True);
         }
     }
 }

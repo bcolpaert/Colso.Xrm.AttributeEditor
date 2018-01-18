@@ -11,3 +11,5 @@
 10. Verify that added field is shown in UI with Action marked as "Create".
 11. Save entity.
 12. Verify that field is shown in UI without an action.
+
+Test invalid attributes in Excel spreadsheet.

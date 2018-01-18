@@ -30,14 +30,14 @@ namespace Colso.Xrm.AttributeEditor
 
         public async Task LoadEntities()
         {
-            //if (Service == null)
-            //{
-            //    OnRequestConnection?.Invoke(this, EventArgs.Empty);
-            //}
-            //else
-            //{
+            if (Service == null)
+            {
+                OnRequestConnection?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
                 await PopulateEntities();
-            //}
+            }
         }
 
         private async Task PopulateEntities()
@@ -61,10 +61,8 @@ namespace Colso.Xrm.AttributeEditor
             {
                 await Task.Factory.StartNew(() =>
                 {
-                    // Retrieve 
                     var sourceList = _metadataHelper.RetrieveEntities(Service);
 
-                    // Prepare list of items
                     foreach (EntityMetadata entity in sourceList)
                         sourceEntitiesList.Add(new EntityItem(entity));
                 });
