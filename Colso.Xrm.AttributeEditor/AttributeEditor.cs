@@ -12,7 +12,6 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.ServiceModel;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
@@ -41,12 +40,48 @@ namespace Colso.Xrm.AttributeEditor
         private System.Drawing.Color ColorCreate = System.Drawing.Color.Green;
         private System.Drawing.Color ColorUpdate = System.Drawing.Color.Blue;
         private System.Drawing.Color ColorDelete = System.Drawing.Color.Red;
+        private AttributeEditorViewModel _vm;
 
         #endregion Variables
 
         public AttributeEditor()
         {
             InitializeComponent();
+
+            // Setup ViewModel
+            _vm = new AttributeEditorViewModel(new TestableMetadataHelper());
+
+            _vm.OnRequestConnection += (sender, args) =>
+            {
+                if (OnRequestConnection != null)
+                {
+                    var requestConnectionArgs = new RequestConnectionEventArgs
+                    {
+                        ActionName = "Load",
+                        Control = this
+                    };
+                    OnRequestConnection(this, requestConnectionArgs);
+                }
+            };
+            _vm.OnEntitiesListChanged += (sender, args) =>
+            {
+                cmbEntities.Items.Clear();
+                cmbEntities.DisplayMember = "DisplayName";
+                cmbEntities.ValueMember = "SchemaName";
+                cmbEntities.Items.AddRange(_vm.Entities.ToArray());
+            };
+            _vm.OnWorkingStateChanged += (sender, args) =>
+            {
+                ManageWorkingState(_vm.WorkingState);
+            };
+            _vm.OnGetInformationPanel += (sender, args) =>
+            {
+                args.Panel = InformationPanel.GetInformationPanel(this, args.Message, args.Width, args.Height);
+            };
+            _vm.OnShowMessageBox += (sender, args) =>
+            {
+                MessageBox.Show(this, args.Message, args.Caption, args.Buttons, args.Icon);
+            };
         }
 
         #region XrmToolbox
@@ -104,6 +139,7 @@ namespace Colso.Xrm.AttributeEditor
         public void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
         {
             service = newService;
+            _vm.Service = service;
         }
 
         public string GetCompany()
@@ -133,22 +169,7 @@ namespace Colso.Xrm.AttributeEditor
 
         private void tsbLoadEntities_Click(object sender, EventArgs e)
         {
-            if (service == null)
-            {
-                if (OnRequestConnection != null)
-                {
-                    var args = new RequestConnectionEventArgs
-                    {
-                        ActionName = "Load",
-                        Control = this
-                    };
-                    OnRequestConnection(this, args);
-                }
-            }
-            else
-            {
-                PopulateEntities();
-            }
+            _vm.LoadEntities();
         }
 
         private void tsbPublish_Click(object sender, EventArgs e)

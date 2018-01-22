@@ -159,6 +159,7 @@
     <Compile Include="AttributeEditor.Designer.cs">
       <DependentUpon>AttributeEditor.cs</DependentUpon>
     </Compile>
+    <Compile Include="AttributeEditorViewModel.cs" />
     <Compile Include="Forms\ErrorList.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -199,12 +200,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.dll" "C:\Users\Michael Sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.dll"
-copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.pdb" "C:\Users\Michael Sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.pdb"</PostBuildEvent>
+    <PostBuildEvent>copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.dll" "C:\Users\michael.sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.dll"
+copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.pdb" "C:\Users\michael.sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.pdb"</PostBuildEvent>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_BuildVersioningStyle="None.YearStamp.MonthStamp.DayStamp" BuildVersion_ConfigurationName="Release" />
+      <UserProperties BuildVersion_ConfigurationName="Release" BuildVersion_BuildVersioningStyle="None.YearStamp.MonthStamp.DayStamp" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" />
     </VisualStudio>
   </ProjectExtensions>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

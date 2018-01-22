@@ -1,0 +1,15 @@
+﻿1. Create a new entity in test environment called with the display name "Attr Test" and publisher "new".
+2. Publish entity
+3. Connect to organization.
+4. Open Attribute Editor.
+5. Load Entities
+	Entities dropdown is populated.
+6. Select the entity "Attr Test"
+7. Click "Download Template"
+8. Verify that downloaded template matches "Expected_1.xlsx"
+9. Verify that downloaded template matches Grid in UI.
+10. Verify that added field is shown in UI with Action marked as "Create".
+11. Save entity.
+12. Verify that field is shown in UI without an action.
+
+Test invalid attributes in Excel spreadsheet.
