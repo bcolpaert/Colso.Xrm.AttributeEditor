@@ -18,6 +18,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
         public string Entity { get; set; }
         public string LogicalName { get; set; }
         public string SchemaName { get; set; }
+        public string Description { get; set; }
         public string Requirement { get; set; }
 
         public abstract void CreateAttribute(IOrganizationService service);
@@ -30,6 +31,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             DisplayName = attribute.DisplayName?.UserLocalizedLabel?.Label;
             Requirement = attribute.RequiredLevel.Value.ToString();
             SchemaName = attribute.SchemaName;
+            Description = attribute.Description?.UserLocalizedLabel?.Label;
 
             LoadAdditionalAttributeMetadata(attribute);
         }

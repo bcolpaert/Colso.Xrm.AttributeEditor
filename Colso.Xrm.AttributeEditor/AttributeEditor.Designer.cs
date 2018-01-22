@@ -36,6 +36,9 @@
             this.tsbPublish = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.gbSettings = new System.Windows.Forms.GroupBox();
+            this.cbDelete = new System.Windows.Forms.CheckBox();
+            this.cbUpdate = new System.Windows.Forms.CheckBox();
+            this.cbCreate = new System.Windows.Forms.CheckBox();
             this.btnImport = new System.Windows.Forms.Button();
             this.btnSelectTemplate = new System.Windows.Forms.Button();
             this.lblEntity = new System.Windows.Forms.Label();
@@ -50,9 +53,6 @@
             this.chState = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chFieldRequirement = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chAction = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.cbCreate = new System.Windows.Forms.CheckBox();
-            this.cbUpdate = new System.Windows.Forms.CheckBox();
-            this.cbDelete = new System.Windows.Forms.CheckBox();
             this.tsMain.SuspendLayout();
             this.gbSettings.SuspendLayout();
             this.gbAttributes.SuspendLayout();
@@ -94,8 +94,8 @@
             this.tsbLoadEntities.Font = new System.Drawing.Font("Segoe UI", 8.25F);
             this.tsbLoadEntities.Image = global::Colso.Xrm.AttributeEditor.Properties.Resources.entities;
             this.tsbLoadEntities.Name = "tsbLoadEntities";
-            this.tsbLoadEntities.Size = new System.Drawing.Size(93, 22);
-            this.tsbLoadEntities.Text = "Load Entities";
+            this.tsbLoadEntities.Size = new System.Drawing.Size(107, 22);
+            this.tsbLoadEntities.Text = "Refresh Entities";
             this.tsbLoadEntities.Click += new System.EventHandler(this.tsbLoadEntities_Click);
             // 
             // tsbPublish
@@ -130,6 +130,40 @@
             this.gbSettings.TabIndex = 91;
             this.gbSettings.TabStop = false;
             this.gbSettings.Text = "Settings";
+            // 
+            // cbDelete
+            // 
+            this.cbDelete.AutoSize = true;
+            this.cbDelete.Location = new System.Drawing.Point(537, 58);
+            this.cbDelete.Name = "cbDelete";
+            this.cbDelete.Size = new System.Drawing.Size(57, 17);
+            this.cbDelete.TabIndex = 7;
+            this.cbDelete.Text = "Delete";
+            this.cbDelete.UseVisualStyleBackColor = true;
+            // 
+            // cbUpdate
+            // 
+            this.cbUpdate.AutoSize = true;
+            this.cbUpdate.Checked = true;
+            this.cbUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbUpdate.Location = new System.Drawing.Point(537, 35);
+            this.cbUpdate.Name = "cbUpdate";
+            this.cbUpdate.Size = new System.Drawing.Size(61, 17);
+            this.cbUpdate.TabIndex = 6;
+            this.cbUpdate.Text = "Update";
+            this.cbUpdate.UseVisualStyleBackColor = true;
+            // 
+            // cbCreate
+            // 
+            this.cbCreate.AutoSize = true;
+            this.cbCreate.Checked = true;
+            this.cbCreate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbCreate.Location = new System.Drawing.Point(537, 12);
+            this.cbCreate.Name = "cbCreate";
+            this.cbCreate.Size = new System.Drawing.Size(57, 17);
+            this.cbCreate.TabIndex = 5;
+            this.cbCreate.Text = "Create";
+            this.cbCreate.UseVisualStyleBackColor = true;
             // 
             // btnImport
             // 
@@ -249,40 +283,6 @@
             // chAction
             // 
             this.chAction.Text = "Action";
-            // 
-            // cbCreate
-            // 
-            this.cbCreate.AutoSize = true;
-            this.cbCreate.Checked = true;
-            this.cbCreate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbCreate.Location = new System.Drawing.Point(537, 12);
-            this.cbCreate.Name = "cbCreate";
-            this.cbCreate.Size = new System.Drawing.Size(57, 17);
-            this.cbCreate.TabIndex = 5;
-            this.cbCreate.Text = "Create";
-            this.cbCreate.UseVisualStyleBackColor = true;
-            // 
-            // cbUpdate
-            // 
-            this.cbUpdate.AutoSize = true;
-            this.cbUpdate.Checked = true;
-            this.cbUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbUpdate.Location = new System.Drawing.Point(537, 35);
-            this.cbUpdate.Name = "cbUpdate";
-            this.cbUpdate.Size = new System.Drawing.Size(61, 17);
-            this.cbUpdate.TabIndex = 6;
-            this.cbUpdate.Text = "Update";
-            this.cbUpdate.UseVisualStyleBackColor = true;
-            // 
-            // cbDelete
-            // 
-            this.cbDelete.AutoSize = true;
-            this.cbDelete.Location = new System.Drawing.Point(537, 58);
-            this.cbDelete.Name = "cbDelete";
-            this.cbDelete.Size = new System.Drawing.Size(57, 17);
-            this.cbDelete.TabIndex = 7;
-            this.cbDelete.Text = "Delete";
-            this.cbDelete.UseVisualStyleBackColor = true;
             // 
             // AttributeEditor
             // 

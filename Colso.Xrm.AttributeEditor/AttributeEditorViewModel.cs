@@ -77,6 +77,7 @@ namespace Colso.Xrm.AttributeEditor
                 else
                 {
                     Entities.AddRange(sourceEntitiesList);
+                    Entities.Sort();
                     OnEntitiesListChanged?.Invoke(this, EventArgs.Empty);
                 }
             }

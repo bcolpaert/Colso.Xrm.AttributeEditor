@@ -140,6 +140,9 @@ namespace Colso.Xrm.AttributeEditor
         {
             service = newService;
             _vm.Service = service;
+
+            // Load entities when connection changes
+            var t = _vm.LoadEntities();
         }
 
         public string GetCompany()
@@ -169,7 +172,7 @@ namespace Colso.Xrm.AttributeEditor
 
         private void tsbLoadEntities_Click(object sender, EventArgs e)
         {
-            _vm.LoadEntities();
+            var t = _vm.LoadEntities();
         }
 
         private void tsbPublish_Click(object sender, EventArgs e)
@@ -219,62 +222,6 @@ namespace Colso.Xrm.AttributeEditor
             Cursor = working ? Cursors.WaitCursor : Cursors.Default;
         }
 
-        private void PopulateEntities()
-        {
-            if (!workingstate)
-            {
-                // Reinit other controls
-                cmbEntities.Items.Clear();
-                ManageWorkingState(true);
-
-                informationPanel = InformationPanel.GetInformationPanel(this, "Loading entities...", 340, 150);
-
-                // Launch treatment
-                var bwFill = new BackgroundWorker();
-                bwFill.DoWork += (sender, e) =>
-                {
-                    // Retrieve 
-                    List<EntityMetadata> sourceList = MetadataHelper.RetrieveEntities(service);
-
-                    // Prepare list of items
-                    var sourceEntitiesList = new List<EntityItem>();
-
-                    foreach (EntityMetadata entity in sourceList)
-                        sourceEntitiesList.Add(new EntityItem(entity));
-
-                    e.Result = sourceEntitiesList.OrderBy(i => i.DisplayName).ToArray();
-                };
-                bwFill.RunWorkerCompleted += (sender, e) =>
-                {
-                    informationPanel.Dispose();
-
-                    if (e.Error != null)
-                    {
-                        MessageBox.Show(this, "An error occured: " + e.Error.Message, "Error", MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error);
-                    }
-                    else
-                    {
-                        var items = (EntityItem[])e.Result;
-                        if (items.Length == 0)
-                        {
-                            MessageBox.Show(this, "The system does not contain any entities", "Warning", MessageBoxButtons.OK,
-                                            MessageBoxIcon.Warning);
-                        }
-                        else
-                        {
-                            cmbEntities.DisplayMember = "DisplayName";
-                            cmbEntities.ValueMember = "SchemaName";
-                            cmbEntities.Items.AddRange(items);
-                        }
-                    }
-
-                    ManageWorkingState(false);
-                };
-                bwFill.RunWorkerAsync();
-            }
-        }
-
         private void PopulateAttributes()
         {
             if (!workingstate)
@@ -286,7 +233,7 @@ namespace Colso.Xrm.AttributeEditor
                 lvAttributes.Columns.Clear();
                 lvAttributes.Columns.Add("Action");
                 foreach (var column in AttributeMetadataRow.GetColumns())
-                    lvAttributes.Columns.Add(column.Header);
+                    lvAttributes.Columns.Add(column.Header, column.Width);
 
                 if (cmbEntities.SelectedItem != null)
                 {
@@ -310,20 +257,18 @@ namespace Colso.Xrm.AttributeEditor
                             {
                                 if (att.IsValidForUpdate.Value && att.IsCustomizable.Value)
                                 {
-                                    var attribute = EntityHelper.GetAttributeFromTypeName(att.AttributeType.Value.ToString());
+                                        var attribute = EntityHelper.GetAttributeFromTypeName(att.AttributeType.Value.ToString());
 
-                                    if (attribute == null)
-                                        continue;
+                                        if (attribute == null)
+                                            continue;
 
-                                    attribute.LoadFromAttributeMetadata(att);
+                                        attribute.LoadFromAttributeMetadata(att);
 
-                                    var row = attribute.ToAttributeMetadataRow();
+                                        var row = attribute.ToAttributeMetadataRow();
+                                        var item = row.ToListViewItem();
 
-                                    var item = row.ToListViewItem();
-
-                                    item.Tag = att;
-
-                                    itemList.Add(item);
+                                        item.Tag = att;
+                                        itemList.Add(item);
                                 }
                             }
 

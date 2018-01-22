@@ -2,9 +2,9 @@
 
 namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 {
-    class DoubleAttribute : AttributeMetadataBase<DecimalAttributeMetadata>
+    class DoubleAttribute : AttributeMetadataBase<DoubleAttributeMetadata>
     {
-        protected override void AddAdditionalMetadata(DecimalAttributeMetadata attribute)
+        protected override void AddAdditionalMetadata(DoubleAttributeMetadata attribute)
         {
             attribute.MaxValue = 100;
             attribute.MinValue = 0;

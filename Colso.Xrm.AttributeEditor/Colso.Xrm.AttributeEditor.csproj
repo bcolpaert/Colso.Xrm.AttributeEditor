@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\..\..\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -135,6 +135,7 @@
     <Compile Include="AppCode\AttributeTypes\AttributeMetadataBase.cs" />
     <Compile Include="AppCode\AttributeTypes\BooleanAttribute.cs" />
     <Compile Include="AppCode\AttributeTypes\DateTimeAttribute.cs" />
+    <Compile Include="AppCode\AttributeTypes\DecimalAttribute.cs" />
     <Compile Include="AppCode\AttributeTypes\DoubleAttribute.cs" />
     <Compile Include="AppCode\AttributeTypes\IAttribute.cs" />
     <Compile Include="AppCode\AttributeTypes\IntegerAttribute.cs" />
@@ -200,8 +201,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.dll" "C:\Users\michael.sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.dll"
-copy "$(ProjectDir)bin\$(ConfigurationName)\Colso.Xrm.AttributeEditor.pdb" "C:\Users\michael.sollenberger\AppData\Roaming\MscrmTools\XrmToolBox\Plugins\Colso.Xrm.AttributeEditor.pdb"</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <ProjectExtensions>
     <VisualStudio>

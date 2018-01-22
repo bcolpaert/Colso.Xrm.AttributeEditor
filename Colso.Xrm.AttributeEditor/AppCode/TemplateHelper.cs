@@ -46,24 +46,49 @@ namespace Colso.Xrm.AttributeEditor.AppCode
 
             return cell;
         }
+         
+        // BC 22/01/2018: cellreference is always null -> use old method
+        //public static string GetCellValue(Row row, int index, SharedStringTable sharedString)
+        //{
+        //    var column = Utilities.IndexToColumn(index+1);
+
+        //    var cell = (Cell) row.ChildElements
+        //            .Select(x => ((Cell)x))
+        //            .Where(x => x != null && x.CellReference != null && x.CellReference.Value != null)
+        //            .Where(x => x.CellReference.Value.StartsWith(column))
+        //            .FirstOrDefault();
+
+        //    if (cell == null)
+        //        return null;
+
+        //    if (cell.DataType != null && sharedString != null
+        //        && cell.DataType.HasValue && cell.DataType == CellValues.SharedString
+        //        && int.Parse(cell.CellValue.InnerText) < sharedString.ChildElements.Count)
+        //    {
+        //        return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
+        //    } 
+
+        //    return cell.CellValue?.InnerText;
+        //}
 
         public static string GetCellValue(Row row, int index, SharedStringTable sharedString)
         {
-            var column = Utilities.IndexToColumn(index+1);
-
-            var cell = (Cell) row.ChildElements.FirstOrDefault(x =>
-                ((Cell) x).CellReference.Value.StartsWith(column));
-
-            if (cell == null)
-                return null;
-
-            if (cell.DataType != null && sharedString != null
+            if (row != null && row.ChildElements.Count > index)
+            {
+                var cell = (Cell)row.ChildElements[index];
+                if (cell.DataType != null && sharedString != null
                 && cell.DataType.HasValue && cell.DataType == CellValues.SharedString
                 && int.Parse(cell.CellValue.InnerText) < sharedString.ChildElements.Count)
-            {
-                return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
-            } 
-            return cell.CellValue?.InnerText;
+                {
+                    return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
+                }
+                else
+                {
+                    return cell.CellValue.InnerText;
+                }
+            }
+
+            return null;
         }
     }
 }

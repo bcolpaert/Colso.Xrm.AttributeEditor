@@ -8,11 +8,17 @@ namespace Colso.Xrm.AttributeEditor.AppCode
     {
         public string Header { get; }
         public CellValues Type { get; }
+        public int Width { get; }
 
-        public ColumnAttribute(string header, CellValues type)
+        public ColumnAttribute(string header, CellValues type) : this(header, type, 100)
+        {
+        }
+
+        public ColumnAttribute(string header, CellValues type, int width)
         {
             Header = header;
             Type = type;
+            Width = width;
         }
     }
 }

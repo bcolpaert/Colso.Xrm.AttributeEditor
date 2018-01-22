@@ -10,17 +10,20 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         public string Action { get; set; }
         public string Entity { get; set; }
 
-        [Column("Logical Name", CellValues.String)]
+        [Column("Logical Name", CellValues.String, 200)]
         public string LogicalName { get; set; }
 
-        [Column("Schema Name", CellValues.String)]
+        [Column("Schema Name", CellValues.String, 200)]
         public string SchemaName { get; set; }
 
-        [Column("Display Name", CellValues.String)]
+        [Column("Display Name", CellValues.String, 200)]
         public string DisplayName { get; set; }
 
         [Column("Type", CellValues.String)]
         public string AttributeType { get; set; }
+
+        [Column("Description", CellValues.String, 250)]
+        public string Description { get; set; }
 
         [Column("Field RequiredLevel", CellValues.String)]
         public string Requirement { get; set; }
