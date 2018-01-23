@@ -10,7 +10,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
         {
             attribute.MaxValue = 1000.00;
             attribute.MinValue = 0.00;
-            attribute.Precision = int.Parse(Precision);
+            if (!string.IsNullOrEmpty(Precision)) attribute.Precision = int.Parse(Precision);
             attribute.PrecisionSource = 1;
             attribute.ImeMode = ImeMode.Disabled;
         }

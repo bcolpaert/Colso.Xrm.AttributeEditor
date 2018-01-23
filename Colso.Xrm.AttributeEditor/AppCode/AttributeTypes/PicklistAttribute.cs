@@ -32,7 +32,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 
         protected override void LoadAdditionalAttributeMetadata(PicklistAttributeMetadata attribute)
         {
-            var options = attribute.OptionSet.Options.Select(x => $"{x.Value}:{x.Label}");
+            var options = attribute.OptionSet.Options.Select(x => $"{x.Value}:{x.Label?.UserLocalizedLabel?.Label}");
 
             Options = string.Join("\n", options);
         }

@@ -35,16 +35,15 @@
             this.tsbLoadEntities = new System.Windows.Forms.ToolStripButton();
             this.tsbPublish = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.gbSettings = new System.Windows.Forms.GroupBox();
-            this.cbDelete = new System.Windows.Forms.CheckBox();
-            this.cbUpdate = new System.Windows.Forms.CheckBox();
-            this.cbCreate = new System.Windows.Forms.CheckBox();
+            this.gbEntity = new System.Windows.Forms.GroupBox();
             this.btnImport = new System.Windows.Forms.Button();
             this.btnSelectTemplate = new System.Windows.Forms.Button();
-            this.lblEntity = new System.Windows.Forms.Label();
             this.txtTemplatePath = new System.Windows.Forms.TextBox();
             this.btnExport = new System.Windows.Forms.Button();
             this.cmbEntities = new System.Windows.Forms.ComboBox();
+            this.cbDelete = new System.Windows.Forms.CheckBox();
+            this.cbUpdate = new System.Windows.Forms.CheckBox();
+            this.cbCreate = new System.Windows.Forms.CheckBox();
             this.gbAttributes = new System.Windows.Forms.GroupBox();
             this.lvAttributes = new System.Windows.Forms.ListView();
             this.chLogicalName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -53,9 +52,16 @@
             this.chState = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chFieldRequirement = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chAction = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.gbSettings = new System.Windows.Forms.GroupBox();
+            this.gbInfo = new System.Windows.Forms.GroupBox();
+            this.lblAvailable = new System.Windows.Forms.Label();
+            this.lblUsed = new System.Windows.Forms.Label();
+            this.lblCount = new System.Windows.Forms.Label();
             this.tsMain.SuspendLayout();
-            this.gbSettings.SuspendLayout();
+            this.gbEntity.SuspendLayout();
             this.gbAttributes.SuspendLayout();
+            this.gbSettings.SuspendLayout();
+            this.gbInfo.SuspendLayout();
             this.SuspendLayout();
             // 
             // tsMain
@@ -102,8 +108,9 @@
             // 
             this.tsbPublish.Image = global::Colso.Xrm.AttributeEditor.Properties.Resources.publishall;
             this.tsbPublish.Name = "tsbPublish";
-            this.tsbPublish.Size = new System.Drawing.Size(84, 22);
-            this.tsbPublish.Text = "Save Entity";
+            this.tsbPublish.Size = new System.Drawing.Size(106, 22);
+            this.tsbPublish.Text = "Save && Publish";
+            this.tsbPublish.ToolTipText = "Save and Publish";
             this.tsbPublish.Click += new System.EventHandler(this.tsbPublish_Click);
             // 
             // toolStripSeparator1
@@ -111,59 +118,19 @@
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
-            // gbSettings
+            // gbEntity
             // 
-            this.gbSettings.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.gbSettings.Controls.Add(this.cbDelete);
-            this.gbSettings.Controls.Add(this.cbUpdate);
-            this.gbSettings.Controls.Add(this.cbCreate);
-            this.gbSettings.Controls.Add(this.btnImport);
-            this.gbSettings.Controls.Add(this.btnSelectTemplate);
-            this.gbSettings.Controls.Add(this.lblEntity);
-            this.gbSettings.Controls.Add(this.txtTemplatePath);
-            this.gbSettings.Controls.Add(this.btnExport);
-            this.gbSettings.Controls.Add(this.cmbEntities);
-            this.gbSettings.Location = new System.Drawing.Point(3, 28);
-            this.gbSettings.Name = "gbSettings";
-            this.gbSettings.Size = new System.Drawing.Size(794, 81);
-            this.gbSettings.TabIndex = 91;
-            this.gbSettings.TabStop = false;
-            this.gbSettings.Text = "Settings";
-            // 
-            // cbDelete
-            // 
-            this.cbDelete.AutoSize = true;
-            this.cbDelete.Location = new System.Drawing.Point(537, 58);
-            this.cbDelete.Name = "cbDelete";
-            this.cbDelete.Size = new System.Drawing.Size(57, 17);
-            this.cbDelete.TabIndex = 7;
-            this.cbDelete.Text = "Delete";
-            this.cbDelete.UseVisualStyleBackColor = true;
-            // 
-            // cbUpdate
-            // 
-            this.cbUpdate.AutoSize = true;
-            this.cbUpdate.Checked = true;
-            this.cbUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbUpdate.Location = new System.Drawing.Point(537, 35);
-            this.cbUpdate.Name = "cbUpdate";
-            this.cbUpdate.Size = new System.Drawing.Size(61, 17);
-            this.cbUpdate.TabIndex = 6;
-            this.cbUpdate.Text = "Update";
-            this.cbUpdate.UseVisualStyleBackColor = true;
-            // 
-            // cbCreate
-            // 
-            this.cbCreate.AutoSize = true;
-            this.cbCreate.Checked = true;
-            this.cbCreate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbCreate.Location = new System.Drawing.Point(537, 12);
-            this.cbCreate.Name = "cbCreate";
-            this.cbCreate.Size = new System.Drawing.Size(57, 17);
-            this.cbCreate.TabIndex = 5;
-            this.cbCreate.Text = "Create";
-            this.cbCreate.UseVisualStyleBackColor = true;
+            this.gbEntity.Controls.Add(this.btnImport);
+            this.gbEntity.Controls.Add(this.btnSelectTemplate);
+            this.gbEntity.Controls.Add(this.txtTemplatePath);
+            this.gbEntity.Controls.Add(this.btnExport);
+            this.gbEntity.Controls.Add(this.cmbEntities);
+            this.gbEntity.Location = new System.Drawing.Point(3, 28);
+            this.gbEntity.Name = "gbEntity";
+            this.gbEntity.Size = new System.Drawing.Size(529, 81);
+            this.gbEntity.TabIndex = 91;
+            this.gbEntity.TabStop = false;
+            this.gbEntity.Text = "Entity";
             // 
             // btnImport
             // 
@@ -184,15 +151,6 @@
             this.btnSelectTemplate.Text = "...";
             this.btnSelectTemplate.UseVisualStyleBackColor = true;
             this.btnSelectTemplate.Click += new System.EventHandler(this.btnSelectTemplate_Click);
-            // 
-            // lblEntity
-            // 
-            this.lblEntity.AutoSize = true;
-            this.lblEntity.Location = new System.Drawing.Point(6, 22);
-            this.lblEntity.Name = "lblEntity";
-            this.lblEntity.Size = new System.Drawing.Size(33, 13);
-            this.lblEntity.TabIndex = 2;
-            this.lblEntity.Text = "Entity";
             // 
             // txtTemplatePath
             // 
@@ -215,11 +173,45 @@
             // cmbEntities
             // 
             this.cmbEntities.FormattingEnabled = true;
-            this.cmbEntities.Location = new System.Drawing.Point(45, 19);
+            this.cmbEntities.Location = new System.Drawing.Point(9, 19);
             this.cmbEntities.Name = "cmbEntities";
-            this.cmbEntities.Size = new System.Drawing.Size(338, 21);
+            this.cmbEntities.Size = new System.Drawing.Size(374, 21);
             this.cmbEntities.TabIndex = 0;
             this.cmbEntities.SelectedIndexChanged += new System.EventHandler(this.cmbEntities_SelectedIndexChanged);
+            // 
+            // cbDelete
+            // 
+            this.cbDelete.AutoSize = true;
+            this.cbDelete.Location = new System.Drawing.Point(11, 61);
+            this.cbDelete.Name = "cbDelete";
+            this.cbDelete.Size = new System.Drawing.Size(57, 17);
+            this.cbDelete.TabIndex = 7;
+            this.cbDelete.Text = "Delete";
+            this.cbDelete.UseVisualStyleBackColor = true;
+            // 
+            // cbUpdate
+            // 
+            this.cbUpdate.AutoSize = true;
+            this.cbUpdate.Checked = true;
+            this.cbUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbUpdate.Location = new System.Drawing.Point(11, 38);
+            this.cbUpdate.Name = "cbUpdate";
+            this.cbUpdate.Size = new System.Drawing.Size(61, 17);
+            this.cbUpdate.TabIndex = 6;
+            this.cbUpdate.Text = "Update";
+            this.cbUpdate.UseVisualStyleBackColor = true;
+            // 
+            // cbCreate
+            // 
+            this.cbCreate.AutoSize = true;
+            this.cbCreate.Checked = true;
+            this.cbCreate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbCreate.Location = new System.Drawing.Point(11, 15);
+            this.cbCreate.Name = "cbCreate";
+            this.cbCreate.Size = new System.Drawing.Size(57, 17);
+            this.cbCreate.TabIndex = 5;
+            this.cbCreate.Text = "Create";
+            this.cbCreate.UseVisualStyleBackColor = true;
             // 
             // gbAttributes
             // 
@@ -284,20 +276,87 @@
             // 
             this.chAction.Text = "Action";
             // 
+            // gbSettings
+            // 
+            this.gbSettings.Controls.Add(this.cbDelete);
+            this.gbSettings.Controls.Add(this.cbCreate);
+            this.gbSettings.Controls.Add(this.cbUpdate);
+            this.gbSettings.Location = new System.Drawing.Point(538, 28);
+            this.gbSettings.Name = "gbSettings";
+            this.gbSettings.Size = new System.Drawing.Size(83, 81);
+            this.gbSettings.TabIndex = 94;
+            this.gbSettings.TabStop = false;
+            this.gbSettings.Text = "Settings";
+            // 
+            // gbInfo
+            // 
+            this.gbInfo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbInfo.Controls.Add(this.lblAvailable);
+            this.gbInfo.Controls.Add(this.lblUsed);
+            this.gbInfo.Controls.Add(this.lblCount);
+            this.gbInfo.Location = new System.Drawing.Point(627, 28);
+            this.gbInfo.Name = "gbInfo";
+            this.gbInfo.Size = new System.Drawing.Size(167, 81);
+            this.gbInfo.TabIndex = 95;
+            this.gbInfo.TabStop = false;
+            this.gbInfo.Text = "Information";
+            // 
+            // lblAvailable
+            // 
+            this.lblAvailable.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblAvailable.AutoEllipsis = true;
+            this.lblAvailable.Location = new System.Drawing.Point(7, 49);
+            this.lblAvailable.Name = "lblAvailable";
+            this.lblAvailable.Size = new System.Drawing.Size(154, 29);
+            this.lblAvailable.TabIndex = 2;
+            this.lblAvailable.Text = "Available space: -Lookup: 0; -Picklist/Boolean/Money: 0; -Other: 0";
+            // 
+            // lblUsed
+            // 
+            this.lblUsed.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblUsed.AutoEllipsis = true;
+            this.lblUsed.AutoSize = true;
+            this.lblUsed.Location = new System.Drawing.Point(7, 32);
+            this.lblUsed.Name = "lblUsed";
+            this.lblUsed.Size = new System.Drawing.Size(105, 13);
+            this.lblUsed.TabIndex = 1;
+            this.lblUsed.Text = "Used space: 0/1024";
+            // 
+            // lblCount
+            // 
+            this.lblCount.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblCount.AutoEllipsis = true;
+            this.lblCount.AutoSize = true;
+            this.lblCount.Location = new System.Drawing.Point(7, 15);
+            this.lblCount.Name = "lblCount";
+            this.lblCount.Size = new System.Drawing.Size(59, 13);
+            this.lblCount.TabIndex = 0;
+            this.lblCount.Text = "0 attributes";
+            // 
             // AttributeEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.gbAttributes);
+            this.Controls.Add(this.gbInfo);
             this.Controls.Add(this.gbSettings);
+            this.Controls.Add(this.gbAttributes);
+            this.Controls.Add(this.gbEntity);
             this.Controls.Add(this.tsMain);
             this.Name = "AttributeEditor";
             this.Size = new System.Drawing.Size(800, 600);
             this.tsMain.ResumeLayout(false);
             this.tsMain.PerformLayout();
+            this.gbEntity.ResumeLayout(false);
+            this.gbEntity.PerformLayout();
+            this.gbAttributes.ResumeLayout(false);
             this.gbSettings.ResumeLayout(false);
             this.gbSettings.PerformLayout();
-            this.gbAttributes.ResumeLayout(false);
+            this.gbInfo.ResumeLayout(false);
+            this.gbInfo.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -309,7 +368,7 @@
         private System.Windows.Forms.ToolStripButton tsbLoadEntities;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripButton tsbPublish;
-        private System.Windows.Forms.GroupBox gbSettings;
+        private System.Windows.Forms.GroupBox gbEntity;
         private System.Windows.Forms.Button btnExport;
         private System.Windows.Forms.ComboBox cmbEntities;
         private System.Windows.Forms.Button btnImport;
@@ -323,9 +382,13 @@
         private System.Windows.Forms.ColumnHeader chState;
         private System.Windows.Forms.ColumnHeader chFieldRequirement;
         private System.Windows.Forms.ColumnHeader chAction;
-        private System.Windows.Forms.Label lblEntity;
         private System.Windows.Forms.CheckBox cbDelete;
         private System.Windows.Forms.CheckBox cbUpdate;
         private System.Windows.Forms.CheckBox cbCreate;
+        private System.Windows.Forms.GroupBox gbSettings;
+        private System.Windows.Forms.GroupBox gbInfo;
+        private System.Windows.Forms.Label lblCount;
+        private System.Windows.Forms.Label lblAvailable;
+        private System.Windows.Forms.Label lblUsed;
     }
 }
