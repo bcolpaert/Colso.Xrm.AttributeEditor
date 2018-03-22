@@ -20,7 +20,7 @@ using XrmToolBox.Extensibility.Interfaces;
 
 namespace Colso.Xrm.AttributeEditor
 {
-    public partial class AttributeEditor : UserControl, IXrmToolBoxPluginControl, IGitHubPlugin, IHelpPlugin, IStatusBarMessenger
+    public partial class AttributeEditor : PluginControlBase, IXrmToolBoxPluginControl, IGitHubPlugin, IHelpPlugin, IStatusBarMessenger, IPayPalPlugin
     {
         #region Variables
 
@@ -53,15 +53,8 @@ namespace Colso.Xrm.AttributeEditor
 
             _vm.OnRequestConnection += (sender, args) =>
             {
-                if (OnRequestConnection != null)
-                {
-                    var requestConnectionArgs = new RequestConnectionEventArgs
-                    {
-                        ActionName = "Load",
-                        Control = this
-                    };
-                    OnRequestConnection(this, requestConnectionArgs);
-                }
+                var arg = new RequestConnectionEventArgs { ActionName = "Load", Control = this };
+                RaiseRequestConnectionEvent(arg);
             };
             _vm.OnEntitiesListChanged += (sender, args) =>
             {
@@ -86,18 +79,11 @@ namespace Colso.Xrm.AttributeEditor
 
         #region XrmToolbox
 
-        public event EventHandler OnCloseTool;
-        public event EventHandler OnRequestConnection;
         public event EventHandler<StatusBarMessageEventArgs> SendMessageToStatusBar;
 
         public Image PluginLogo
         {
             get { return null; }
-        }
-
-        public IOrganizationService Service
-        {
-            get { throw new NotImplementedException(); }
         }
 
         public string HelpUrl
@@ -124,19 +110,23 @@ namespace Colso.Xrm.AttributeEditor
             }
         }
 
-        public void ClosingPlugin(PluginCloseInfo info)
+        public string DonationDescription
         {
-            if (info.FormReason != CloseReason.None ||
-                info.ToolBoxReason == ToolBoxCloseReason.CloseAll ||
-                info.ToolBoxReason == ToolBoxCloseReason.CloseAllExceptActive)
+            get
             {
-                return;
+                return "Donation for Entity Attribute Editer - XrmToolBox";
             }
-
-            info.Cancel = MessageBox.Show(@"Are you sure you want to close this tab?", @"Question", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes;
         }
 
-        public void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
+        public string EmailAccount
+        {
+            get
+            {
+                return "bramcolpaert@outlook.com";
+            }
+        }
+
+        public override void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
         {
             service = newService;
             _vm.Service = service;
@@ -166,8 +156,7 @@ namespace Colso.Xrm.AttributeEditor
 
         private void tsbCloseThisTab_Click(object sender, EventArgs e)
         {
-            if (OnCloseTool != null)
-                OnCloseTool(this, null);
+            CloseTool();
         }
 
         private void tsbLoadEntities_Click(object sender, EventArgs e)
@@ -315,15 +304,16 @@ namespace Colso.Xrm.AttributeEditor
 
             ManageWorkingState(true);
 
+            var selectedLogicalName = (EntityItem)cmbEntities.SelectedItem;
+
             var saveFileDlg = new SaveFileDialog()
             {
                 Title = "Save the entity template",
                 Filter = "Excel Workbook|*.xlsx",
-                FileName = "attributeeditor.xlsx"
+                FileName = string.Format("{0}_attributeeditor.xlsx", selectedLogicalName)
             };
             saveFileDlg.ShowDialog();
 
-            var selectedLogicalName = (EntityItem)cmbEntities.SelectedItem;
 
             // If the file name is not an empty string open it for saving.
             if (!string.IsNullOrEmpty(saveFileDlg.FileName))
@@ -679,10 +669,11 @@ namespace Colso.Xrm.AttributeEditor
             var available = limit - usedspace;
             var available2 = Math.Floor((double)(available / 2));
             var available3 = Math.Floor((double)(available / 3));
+            var available4 = Math.Floor((double)(available / 4));
 
             lblCount.Text = string.Format("{0} attributes", count);
             lblUsed.Text = string.Format("Used space: {0}/{1}", usedspace, limit);
-            lblAvailable.Text = string.Format("Available space: -Lookup: {0}; -Picklist/Boolean/Money: {1}; -Other: {2}", available3 > 0 ? available3 : 0, available2 > 0 ? available2 : 0, available);
+            lblAvailable.Text = string.Format("Available space: -Money: {0}; -Lookup: {1}; -Picklist/Boolean: {2}; -Other: {3}", available4 > 0 ? available4 : 0, available3 > 0 ? available3 : 0, available2 > 0 ? available2 : 0, available);
         }
 
         private void SetListViewSorting(ListView listview, int column)

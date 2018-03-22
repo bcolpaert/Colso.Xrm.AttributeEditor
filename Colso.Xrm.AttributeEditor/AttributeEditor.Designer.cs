@@ -311,7 +311,7 @@
             this.lblAvailable.Name = "lblAvailable";
             this.lblAvailable.Size = new System.Drawing.Size(154, 29);
             this.lblAvailable.TabIndex = 2;
-            this.lblAvailable.Text = "Available space: -Lookup: 0; -Picklist/Boolean/Money: 0; -Other: 0";
+            this.lblAvailable.Text = "Available space: -Money: 0; -Lookup: 0; -Picklist/Boolean: 0; -Other: 0";
             // 
             // lblUsed
             // 

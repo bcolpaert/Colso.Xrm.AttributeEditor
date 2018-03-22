@@ -39,7 +39,8 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
                 LogicalName = LogicalName,
                 SchemaName = SchemaName,
                 DisplayName = new Label(DisplayName, LanguageCode),
-                RequiredLevel = ParseRequiredLevel(Requirement)
+                RequiredLevel = ParseRequiredLevel(Requirement),
+                Description = new Label(Description, LanguageCode)
             };
 
             AddAdditionalMetadata(attribute);
