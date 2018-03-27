@@ -198,6 +198,11 @@ namespace Colso.Xrm.AttributeEditor
             }
         }
 
+        private void tsbDonate_Click(object sender, EventArgs e)
+        {
+            OpenDonationPage("EUR");
+        }
+
         #endregion Form events
 
         #region Methods
@@ -310,7 +315,7 @@ namespace Colso.Xrm.AttributeEditor
             {
                 Title = "Save the entity template",
                 Filter = "Excel Workbook|*.xlsx",
-                FileName = string.Format("{0}_attributeeditor.xlsx", selectedLogicalName)
+                FileName = string.Format("{0}_attributeeditor.xlsx", selectedLogicalName?.LogicalName)
             };
             saveFileDlg.ShowDialog();
 
@@ -727,6 +732,12 @@ namespace Colso.Xrm.AttributeEditor
             }
 
             return changed;
+        }
+
+        private void OpenDonationPage(string currency)
+        {
+            var url = string.Format("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business={0}&lc=GB&item_name={1}&currency_code={2}&no_note=0&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest", EmailAccount, DonationDescription, currency);
+            System.Diagnostics.Process.Start(url);
         }
 
         #endregion Methods

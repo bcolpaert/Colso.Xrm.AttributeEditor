@@ -57,6 +57,7 @@
             this.lblAvailable = new System.Windows.Forms.Label();
             this.lblUsed = new System.Windows.Forms.Label();
             this.lblCount = new System.Windows.Forms.Label();
+            this.tsbDonate = new System.Windows.Forms.ToolStripButton();
             this.tsMain.SuspendLayout();
             this.gbEntity.SuspendLayout();
             this.gbAttributes.SuspendLayout();
@@ -72,7 +73,8 @@
             this.toolStripSeparator2,
             this.tsbLoadEntities,
             this.tsbPublish,
-            this.toolStripSeparator1});
+            this.toolStripSeparator1,
+            this.tsbDonate});
             this.tsMain.Location = new System.Drawing.Point(0, 0);
             this.tsMain.Name = "tsMain";
             this.tsMain.Size = new System.Drawing.Size(800, 25);
@@ -337,6 +339,15 @@
             this.lblCount.TabIndex = 0;
             this.lblCount.Text = "0 attributes";
             // 
+            // tsbDonate
+            // 
+            this.tsbDonate.Image = global::Colso.Xrm.AttributeEditor.Properties.Resources.paypal;
+            this.tsbDonate.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbDonate.Name = "tsbDonate";
+            this.tsbDonate.Size = new System.Drawing.Size(65, 22);
+            this.tsbDonate.Text = "Donate";
+            this.tsbDonate.Click += new System.EventHandler(this.tsbDonate_Click);
+            // 
             // AttributeEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -390,5 +401,6 @@
         private System.Windows.Forms.Label lblCount;
         private System.Windows.Forms.Label lblAvailable;
         private System.Windows.Forms.Label lblUsed;
+        private System.Windows.Forms.ToolStripButton tsbDonate;
     }
 }
