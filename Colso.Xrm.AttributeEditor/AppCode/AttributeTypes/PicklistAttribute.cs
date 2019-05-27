@@ -13,8 +13,9 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 
         protected override void AddAdditionalMetadata(PicklistAttributeMetadata attribute)
         {
-            var options = Options.Split('\n').Select(x =>
+            var options = Options?.Split('\n').Select(x =>
                 x.Split(':'))
+                .Where(x => x != null && x.Length > 1)
                 .Select(x => new OptionMetadata(new Label(x[1], LanguageCode), Int32.Parse(x[0]))).ToList();
 
             var optionCollection = new OptionMetadataCollection(options);
@@ -32,9 +33,15 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 
         protected override void LoadAdditionalAttributeMetadata(PicklistAttributeMetadata attribute)
         {
-            var options = attribute.OptionSet.Options.Select(x => $"{x.Value}:{x.Label?.UserLocalizedLabel?.Label}");
+            if (attribute.OptionSet.IsGlobal == true)
+            {
+                GlobalOptionsetName = string.Concat(attribute.OptionSet.Name, ":", attribute.OptionSet.DisplayName.UserLocalizedLabel?.Label);
 
-            Options = string.Join("\n", options);
+            } else
+            {
+                var options = attribute.OptionSet.Options.Select(x => $"{x.Value}:{x.Label?.UserLocalizedLabel?.Label}");
+                Options = string.Join("\n", options);
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Colso.Xrm.AttributeEditor.AppCode
@@ -73,22 +74,63 @@ namespace Colso.Xrm.AttributeEditor.AppCode
 
         public static string GetCellValue(Row row, int index, SharedStringTable sharedString)
         {
-            if (row != null && row.ChildElements.Count > index)
+            if (row != null)
             {
-                var cell = (Cell)row.ChildElements[index];
-                if (cell.DataType != null && sharedString != null
-                && cell.DataType.HasValue && cell.DataType == CellValues.SharedString
-                && int.Parse(cell.CellValue.InnerText) < sharedString.ChildElements.Count)
+                Cell cell = null;
+                // Search cell
+                foreach (Cell c in row.ChildElements)
                 {
-                    return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
+                    var cIndex = GetColumnIndex(c.CellReference);
+                    if (cIndex == index)
+                    {
+                        cell = c;
+                        break;
+                    } else if (cIndex > index)
+                    {
+                        // we are past the index
+                        break;
+                    }
                 }
-                else
+                if (cell != null)
                 {
-                    return cell.CellValue.InnerText;
+                    if (cell.DataType != null && sharedString != null
+                    && cell.DataType.HasValue && cell.DataType == CellValues.SharedString
+                    && int.Parse(cell.CellValue.InnerText) < sharedString.ChildElements.Count)
+                    {
+                        return sharedString.ChildElements[int.Parse(cell.CellValue.InnerText)].InnerText;
+                    }
+                    else
+                    {
+                        return cell.CellValue.InnerText;
+                    }
                 }
             }
 
             return null;
         }
+        private static int? GetColumnIndex(string cellReference)
+        {
+            if (string.IsNullOrEmpty(cellReference))
+                return null;
+
+            //remove digits
+            string columnReference = Regex.Replace(cellReference.ToUpper(), @"[\d]", string.Empty);
+
+            int columnNumber = -1;
+            int mulitplier = 1;
+
+            //working from the end of the letters take the ASCII code less 64 (so A = 1, B =2...etc)
+            //then multiply that number by our multiplier (which starts at 1)
+            //multiply our multiplier by 26 as there are 26 letters
+            foreach (char c in columnReference.ToCharArray().Reverse())
+            {
+                columnNumber += mulitplier * ((int)c - 64);
+
+                mulitplier = mulitplier * 26;
+            }
+
+            return columnNumber;
+        }
+
     }
 }

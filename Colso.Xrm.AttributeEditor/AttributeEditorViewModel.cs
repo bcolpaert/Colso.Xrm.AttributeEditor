@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Colso.Xrm.AttributeEditor.AppCode;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
+using XrmToolBox.Extensibility;
 
 namespace Colso.Xrm.AttributeEditor
 {

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using DocumentFormat.OpenXml.Spreadsheet;
 
@@ -158,7 +159,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
             }
         }
 
-        private bool Equal(object oldValue, string newValue)
+        private static bool Equal(object oldValue, string newValue)
         {
             if (oldValue == null && newValue == null || oldValue == null && newValue == string.Empty ||
                 oldValue is string && (string)oldValue == string.Empty && newValue == null)

@@ -8,6 +8,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
@@ -29,17 +30,12 @@ namespace Colso.Xrm.AttributeEditor
         /// </summary>
         private Panel informationPanel;
 
-        /// <summary>
-        /// Dynamics CRM 2011 organization service
-        /// </summary>
-        private IOrganizationService service;
-
         private bool workingstate = false;
         private Dictionary<string, int> lvSortcolumns = new Dictionary<string, int>();
 
-        private System.Drawing.Color ColorCreate = System.Drawing.Color.Green;
-        private System.Drawing.Color ColorUpdate = System.Drawing.Color.Blue;
-        private System.Drawing.Color ColorDelete = System.Drawing.Color.Red;
+        private System.Drawing.Color ColorCreate = System.Drawing.Color.LightGreen;
+        private System.Drawing.Color ColorUpdate = System.Drawing.Color.LightBlue;
+        private System.Drawing.Color ColorDelete = System.Drawing.Color.Salmon;
         private AttributeEditorViewModel _vm;
 
         #endregion Variables
@@ -126,14 +122,14 @@ namespace Colso.Xrm.AttributeEditor
             }
         }
 
-        public override void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
-        {
-            service = newService;
-            _vm.Service = service;
+        //public override void UpdateConnection(IOrganizationService newService, ConnectionDetail connectionDetail, string actionName = "", object parameter = null)
+        //{
+        //    service = newService;
+        //    _vm.Service = service;
 
-            // Load entities when connection changes
-            var t = _vm.LoadEntities();
-        }
+        //    // Load entities when connection changes
+        //    var t = _vm.LoadEntities();
+        //}
 
         public string GetCompany()
         {
@@ -153,6 +149,23 @@ namespace Colso.Xrm.AttributeEditor
         #endregion XrmToolbox
 
         #region Form events
+
+        //protected override void ConnectionDetailsUpdated(NotifyCollectionChangedEventArgs e)
+        //{
+        //    // For now, only support one target org
+        //    if (e.Action.Equals(NotifyCollectionChangedAction.Add))
+        //    {
+        //        var detail = (ConnectionDetail)e.NewItems[0];
+        //        SetConnectionLabel(detail.ConnectionName, ServiceType.Target);
+        //        targetService = detail.ServiceClient;
+        //    }
+        //}
+
+        protected void Custom_ConnectionUpdated(object sender, ConnectionUpdatedEventArgs e)
+        {
+            _vm.Service = e.Service;
+            var t = _vm.LoadEntities();
+        }
 
         private void tsbCloseThisTab_Click(object sender, EventArgs e)
         {
@@ -242,7 +255,7 @@ namespace Colso.Xrm.AttributeEditor
                         bwFill.DoWork += (sender, e) =>
                         {
                             // Retrieve 
-                            var entity = MetadataHelper.RetrieveEntity(entityitem.LogicalName, service);
+                            var entity = MetadataHelper.RetrieveEntity(entityitem.LogicalName, this.Service);
 
                             // Prepare list of items
                             var itemList = new List<ListViewItem>();
@@ -499,7 +512,11 @@ namespace Colso.Xrm.AttributeEditor
 
                                 if (!string.IsNullOrEmpty(logicalname))
                                 {
-                                    var attribute = attributes.Select(a => (AttributeMetadata)a.Tag).Where(a => a.LogicalName == logicalname).FirstOrDefault();
+                                    var attribute = attributes
+                                        .Where(a => a.Tag != null)
+                                        .Select(a => (AttributeMetadata)a.Tag)
+                                        .Where(a => a.LogicalName == logicalname)
+                                        .FirstOrDefault();
 
                                     if (attribute == null)
                                     {
@@ -581,7 +598,7 @@ namespace Colso.Xrm.AttributeEditor
             bwTransferData.DoWork += (sender, e) =>
             {
                 var errors = new List<Tuple<string, string>>();
-                var helper = new EntityHelper(entityitem.LogicalName, entityitem.LanguageCode, service);
+                var helper = new EntityHelper(entityitem.LogicalName, entityitem.LanguageCode, this.Service);
 
                 for (int i = 0; i < itemsToProcess.Count; i++)
                 {
@@ -611,13 +628,13 @@ namespace Colso.Xrm.AttributeEditor
                         switch (item.Action)
                         {
                             case "Create":
-                                if (cbCreate.Checked) attribute.CreateAttribute(service);
+                                if (cbCreate.Checked) attribute.CreateAttribute(Service);
                                 break;
                             case "Update":
-                                if (cbUpdate.Checked) attribute.UpdateAttribute(service);
+                                if (cbUpdate.Checked) attribute.UpdateAttribute(Service);
                                 break;
                             case "Delete":
-                                if (cbDelete.Checked) attribute.DeleteAttribute(service);
+                                if (cbDelete.Checked) attribute.DeleteAttribute(Service);
                                 break;
                         }
                     }

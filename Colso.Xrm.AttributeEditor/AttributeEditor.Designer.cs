@@ -352,6 +352,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ConnectionUpdated += new XrmToolBox.Extensibility.PluginControlBase.ConnectionUpdatedHandler(this.Custom_ConnectionUpdated);
             this.Controls.Add(this.gbInfo);
             this.Controls.Add(this.gbSettings);
             this.Controls.Add(this.gbAttributes);
