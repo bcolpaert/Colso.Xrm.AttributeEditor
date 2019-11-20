@@ -21,14 +21,16 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             var optionCollection = new OptionMetadataCollection(options);
 
             var globalNames = !string.IsNullOrEmpty(GlobalOptionsetName) ? GlobalOptionsetName.Split(':') : null;
-
-            attribute.OptionSet = new OptionSetMetadata(optionCollection)
+            var optionSetMetadata = new OptionSetMetadata(optionCollection);
+            optionSetMetadata.IsGlobal = globalNames != null;
+            if (globalNames != null)
             {
-                IsGlobal = globalNames != null,
-                Name = globalNames?[0],
-                DisplayName = new Label(globalNames?[1], LanguageCode),
-                OptionSetType = OptionSetType.Picklist,
-            };
+                optionSetMetadata.Name = globalNames[0];
+                optionSetMetadata.DisplayName = new Label(globalNames?[1], LanguageCode);
+            }
+            optionSetMetadata.OptionSetType = OptionSetType.Picklist;
+
+            attribute.OptionSet = optionSetMetadata;
         }
 
         protected override void LoadAdditionalAttributeMetadata(PicklistAttributeMetadata attribute)
@@ -37,7 +39,8 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             {
                 GlobalOptionsetName = string.Concat(attribute.OptionSet.Name, ":", attribute.OptionSet.DisplayName.UserLocalizedLabel?.Label);
 
-            } else
+            }
+            else
             {
                 var options = attribute.OptionSet.Options.Select(x => $"{x.Value}:{x.Label?.UserLocalizedLabel?.Label}");
                 Options = string.Join("\n", options);
