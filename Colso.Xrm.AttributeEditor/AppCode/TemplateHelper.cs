@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Colso.Xrm.AttributeEditor.AppCode
 {
-    public class TemplateHelper
+    public static class TemplateHelper
     {
 
         public static void InitDocument(SpreadsheetDocument document, out WorkbookPart workbookPart, out Sheets sheets)
@@ -72,7 +72,23 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         //    return cell.CellValue?.InnerText;
         //}
 
-        public static string GetCellValue(Row row, int index, SharedStringTable sharedString)
+        public static object ConvertToRawValue(this ColumnAttribute column, string stringvalue)
+        {
+            if (!string.IsNullOrEmpty(stringvalue))
+            {
+                switch (column.Type)
+                {
+                    case CellValues.Number:
+                        return int.Parse(stringvalue);
+                    default:
+                        return stringvalue;
+                }
+            }
+
+            return null;
+        }
+
+        public static string GetCellValue(this Row row, int index, SharedStringTable sharedString)
         {
             if (row != null)
             {

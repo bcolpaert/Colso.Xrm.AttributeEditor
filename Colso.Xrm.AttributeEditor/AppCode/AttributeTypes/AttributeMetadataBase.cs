@@ -38,10 +38,13 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             {
                 LogicalName = LogicalName,
                 SchemaName = SchemaName,
-                DisplayName = new Label(DisplayName, LanguageCode),
-                RequiredLevel = ParseRequiredLevel(Requirement),
-                Description = new Label(Description, LanguageCode)
+                RequiredLevel = ParseRequiredLevel(Requirement)
             };
+
+            // Only add labels if we have a value
+            if (!string.IsNullOrEmpty(DisplayName)) attribute.DisplayName = new Label(DisplayName, LanguageCode);
+            if (!string.IsNullOrEmpty(Description)) attribute.Description = new Label(Description, LanguageCode);
+
 
             AddAdditionalMetadata(attribute);
 

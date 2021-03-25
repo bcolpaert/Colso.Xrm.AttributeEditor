@@ -4,9 +4,16 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 {
     class StringAttribute : AttributeMetadataBase<StringAttributeMetadata>
     {
+        public int? MaxLength { get; set; }
+
         protected override void AddAdditionalMetadata(StringAttributeMetadata attribute)
         {
-            attribute.MaxLength = 100;
+            attribute.MaxLength = MaxLength;
+        }
+
+        protected override void LoadAdditionalAttributeMetadata(StringAttributeMetadata attribute)
+        {
+            MaxLength = attribute.MaxLength;
         }
     }
 }

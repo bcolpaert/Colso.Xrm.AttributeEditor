@@ -361,7 +361,7 @@ namespace Colso.Xrm.AttributeEditor
                             var headerRow = new Row();
 
                             foreach (var field in AttributeMetadataRow.GetColumns())
-                                headerRow.AppendChild(TemplateHelper.CreateCell(field.Type, field.Header));
+                                headerRow.AppendChild(TemplateHelper.CreateCell(CellValues.String, field.Header));
 
                             sheetData.AppendChild(headerRow);
 
@@ -476,7 +476,7 @@ namespace Colso.Xrm.AttributeEditor
                             // Check all existing attributes
                             foreach (var item in attributes)
                             {
-                                var row = templaterows.Where(r => TemplateHelper.GetCellValue(r, 0, stringTable) == item.SubItems[1].Text).FirstOrDefault();
+                                var row = templaterows.Where(r => r.GetCellValue(0, stringTable) == item.SubItems[1].Text).FirstOrDefault();
 
                                 var attributeMetadataRow = AttributeMetadataRow.FromListViewItem(item);
 
@@ -508,7 +508,7 @@ namespace Colso.Xrm.AttributeEditor
                             for (int i = 1; i < templaterows.Length; i++)
                             {
                                 var row = templaterows[i];
-                                var logicalname = TemplateHelper.GetCellValue(row, 0, stringTable);
+                                var logicalname = row.GetCellValue(0, stringTable);
 
                                 if (!string.IsNullOrEmpty(logicalname))
                                 {
@@ -649,6 +649,7 @@ namespace Colso.Xrm.AttributeEditor
                     //}
                 }
 
+                InformationPanel.ChangeInformationPanelMessage(informationPanel, "Publishing changes...");
                 helper.Publish();
                 e.Result = errors;
             };
@@ -726,7 +727,7 @@ namespace Colso.Xrm.AttributeEditor
         {
             var changed = false;
 
-            var displayName = TemplateHelper.GetCellValue(row, 1, stringTable);
+            var displayName = row.GetCellValue(1, stringTable);
             if (lvItems.SubItems[1].Text != displayName && !string.IsNullOrEmpty(displayName))
             {
                 lvItems.SubItems[1].Text = displayName;
@@ -738,7 +739,7 @@ namespace Colso.Xrm.AttributeEditor
             {
                 var item = lvItems.SubItems[i];
 
-                var value = TemplateHelper.GetCellValue(row, 4, stringTable);
+                var value = row.GetCellValue(4, stringTable);
 
                 if (item.Text != value && !string.IsNullOrEmpty(value))
                 {

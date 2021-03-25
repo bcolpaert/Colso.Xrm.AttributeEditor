@@ -50,7 +50,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             {
                 ReferencedEntity = LookupTarget,
                 ReferencingEntity = Entity,
-                SchemaName = $"{prefix}_{LookupTarget}_{Entity}",
+                SchemaName = $"{prefix}_{LookupTarget}_{Entity}_{LogicalName}",
                 AssociatedMenuConfiguration = new AssociatedMenuConfiguration
                 {
                     Behavior = AssociatedMenuBehavior.UseLabel,

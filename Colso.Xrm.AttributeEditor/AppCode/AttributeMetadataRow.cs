@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -29,6 +30,9 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         [Column("Field RequiredLevel", CellValues.String)]
         public string Requirement { get; set; }
 
+        [Column("Max Length", CellValues.Number)]
+        public int? MaxLength { get; set; }
+
         [Column("LookupAttribute Target", CellValues.String)]
         public string LookupTarget { get; set; }
 
@@ -55,7 +59,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                newRow.AppendChild(TemplateHelper.CreateCell(column.Type, property.GetValue(this) as string));
+                newRow.AppendChild(TemplateHelper.CreateCell(column.Type, property.GetValue(this)?.ToString()));
             }
 
             return newRow;
@@ -75,7 +79,8 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                property.SetValue(result, TemplateHelper.GetCellValue(row, i, sharedStrings)?.Trim());
+                var stringvalue = row.GetCellValue(i, sharedStrings)?.Trim();
+                property.SetValue(result, column.ConvertToRawValue(stringvalue));
             }
 
             return result;
@@ -95,7 +100,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                property.SetValue(result, item.SubItems[i+1].Text);
+                property.SetValue(result, column.ConvertToRawValue(item.SubItems[i + 1].Text));
             }
 
             return result;
@@ -114,7 +119,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                 var property = properties.First(x =>
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
-                result.SubItems.Add((string)property.GetValue(this));
+                result.SubItems.Add(property.GetValue(this)?.ToString());
             }
 
             return result;
@@ -149,7 +154,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode
                     (x.GetCustomAttribute(typeof(ColumnAttribute)) as ColumnAttribute)?.Header == column.Header);
 
                 var oldValue = property.GetValue(this);
-                var newValue = TemplateHelper.GetCellValue(row, i, sharedStrings);
+                var newValue = column.ConvertToRawValue(row.GetCellValue(i, sharedStrings));
 
                 if (!Equal(oldValue, newValue))
                 {
@@ -159,13 +164,13 @@ namespace Colso.Xrm.AttributeEditor.AppCode
             }
         }
 
-        private static bool Equal(object oldValue, string newValue)
+        private static bool Equal(object oldValue, object newValue)
         {
-            if (oldValue == null && newValue == null || oldValue == null && newValue == string.Empty ||
-                oldValue is string && (string)oldValue == string.Empty && newValue == null)
+            if ((oldValue == null && newValue == null) ||
+                (oldValue is string && (string)oldValue == string.Empty && newValue == null))
                 return true;
 
-            return oldValue.Equals(newValue);
+            return oldValue?.Equals(newValue) == true;
         }
     }
 }
