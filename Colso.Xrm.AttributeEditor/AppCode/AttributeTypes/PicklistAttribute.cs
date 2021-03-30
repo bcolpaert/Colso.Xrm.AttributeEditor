@@ -25,9 +25,9 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             attribute.OptionSet = new OptionSetMetadata(optionCollection)
             {
                 IsGlobal = globalNames != null,
-                Name = globalNames?[0],
-                DisplayName = new Label(globalNames?[1], LanguageCode),
-                OptionSetType = OptionSetType.Picklist,
+                Name = (globalNames == null ? null : globalNames[0]),
+                DisplayName = (globalNames == null ? null : new Label(globalNames[1], LanguageCode)),
+                OptionSetType = OptionSetType.Picklist
             };
         }
 
