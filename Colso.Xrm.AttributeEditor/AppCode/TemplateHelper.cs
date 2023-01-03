@@ -94,14 +94,25 @@ namespace Colso.Xrm.AttributeEditor.AppCode
             {
                 Cell cell = null;
                 // Search cell
-                foreach (Cell c in row.ChildElements)
+                for (int i = 0; i < row.ChildElements.Count; i++)
                 {
-                    var cIndex = GetColumnIndex(c.CellReference);
+                    int? cIndex;
+                    Cell c = (Cell)row.ChildElements[i];
+                    if (c.CellReference == null)
+                    {
+                        // Asume index equals childelement index
+                        cIndex = i;
+                    } else
+                    {
+                        cIndex = GetColumnIndex(c.CellReference);
+                    }
+
                     if (cIndex == index)
                     {
                         cell = c;
                         break;
-                    } else if (cIndex > index)
+                    }
+                    else if (cIndex > index)
                     {
                         // we are past the index
                         break;
