@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
@@ -13,10 +14,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 
         protected override void AddAdditionalMetadata(PicklistAttributeMetadata attribute)
         {
-            var options = Options?.Split('\n').Select(x =>
-                x.Split(':'))
-                .Where(x => x != null && x.Length > 1)
-                .Select(x => new OptionMetadata(new Label(x[1], LanguageCode), Int32.Parse(x[0]))).ToList();
+            var options = ParseOptions();
 
             var optionCollection = new OptionMetadataCollection(options);
 
@@ -29,6 +27,17 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
                 DisplayName = (globalNames == null ? null : new Label(globalNames[1], LanguageCode)),
                 OptionSetType = OptionSetType.Picklist
             };
+        }
+
+        private List<OptionMetadata> ParseOptions()
+        {
+            var options = Options.Split('\n').Select(x =>
+                    x.Split(':'))
+                    .Where(x => x != null && x.Length > 1)
+                    .Select(x => new OptionMetadata(new Label(x[1], LanguageCode), int.Parse(x[0])))
+                    .ToList();
+
+            return options;
         }
 
         protected override void LoadAdditionalAttributeMetadata(PicklistAttributeMetadata attribute)

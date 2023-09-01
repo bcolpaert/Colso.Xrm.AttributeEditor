@@ -30,8 +30,11 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         [Column("Field RequiredLevel", CellValues.String)]
         public string Requirement { get; set; }
 
-        [Column("Max Length", CellValues.Number)]
-        public int? MaxLength { get; set; }
+        [Column("Min Value", CellValues.Number)]
+        public object MinValue { get; set; }
+
+        [Column("Max Value", CellValues.Number)]
+        public object MaxValue { get; set; }
 
         [Column("LookupAttribute Target", CellValues.String)]
         public string LookupTarget { get; set; }
@@ -42,11 +45,11 @@ namespace Colso.Xrm.AttributeEditor.AppCode
         [Column("Global Optionset Name (Name:DisplayName)", CellValues.String)]
         public string GlobalOptionsetName { get; set; }
 
-        [Column("Precision", CellValues.String)]
-        public string Precision { get; set; }
+        [Column("Precision", CellValues.Number)]
+        public int? Precision { get; set; }
 
-        [Column("Date Format", CellValues.String)]
-        public string DateFormat { get; set; }
+        [Column("Format", CellValues.String)]
+        public string Format { get; set; }
 
         public Row ToTableRow()
         {
