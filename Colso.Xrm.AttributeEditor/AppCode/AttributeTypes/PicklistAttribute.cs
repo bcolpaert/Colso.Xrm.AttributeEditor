@@ -31,7 +31,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
 
         private List<OptionMetadata> ParseOptions()
         {
-            var options = Options.Split('\n').Select(x =>
+            var options = Options?.Split('\n').Select(x =>
                     x.Split(':'))
                     .Where(x => x != null && x.Length > 1)
                     .Select(x => new OptionMetadata(new Label(x[1], LanguageCode), int.Parse(x[0])))

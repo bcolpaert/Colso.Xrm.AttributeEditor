@@ -8,7 +8,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
     class MemoAttribute : AttributeMetadataBase<MemoAttributeMetadata>
     {
         public string Format { get; set; }
-        public int? MaxLength { get; set; }
+        public int? MaxValue { get; set; }
 
         protected override void AddAdditionalMetadata(MemoAttributeMetadata attribute)
         {
@@ -18,13 +18,13 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
             attribute.Format = format;
 
             attribute.ImeMode = ImeMode.Disabled;
-            attribute.MaxLength = MaxLength;
+            attribute.MaxLength = MaxValue;
         }
 
         protected override void LoadAdditionalAttributeMetadata(MemoAttributeMetadata attribute)
         {
             Format = attribute.Format.ToString();
-            MaxLength = attribute.MaxLength;
+            MaxValue = attribute.MaxLength;
         }
     }
 }

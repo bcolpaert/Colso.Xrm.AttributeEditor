@@ -58,7 +58,12 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
                 if (attributeProperty != null)
                 {
                     var value = attributeMetadataRowProperty.GetValue(row);
-                    attributeProperty.SetValue(this, value);
+                    if (attributeProperty.PropertyType == typeof(decimal?) && value.GetType() == typeof(int))
+                        attributeProperty.SetValue(this, (decimal)(int)value);
+                    else if (attributeProperty.PropertyType == typeof(double?) && value.GetType() == typeof(int))
+                        attributeProperty.SetValue(this, (double)(int)value);
+                    else
+                        attributeProperty.SetValue(this, value);
                 }
             }
         }
