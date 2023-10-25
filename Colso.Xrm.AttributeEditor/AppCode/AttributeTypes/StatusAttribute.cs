@@ -48,6 +48,7 @@ namespace Colso.Xrm.AttributeEditor.AppCode.AttributeTypes
                 {
                     var request = new InsertStatusValueRequest
                     {
+                        StateCode = option.State.Value,
                         Value = option.Value,
                         Label = option.Label,
                         AttributeLogicalName = LogicalName,
